@@ -1,8 +1,8 @@
-import { normalizeTopLevelKeys } from "../core/normalize.ts";
-import type { JsonObject, JsonValue } from "../core/json.ts";
-import { parseYandexApiResponse } from "../http/response.ts";
+import { joinIds, type TrackId } from "../core/identifiers.ts";
+import { normalizeObject } from "../core/parsing.ts";
 import type { HttpTransport, SupportedLanguage } from "../http/types.ts";
 import { Track } from "../models/track/Track.ts";
+import { parseObjectArrayResult } from "./parsing.ts";
 
 export interface TracksByIdsOptions {
   readonly language?: SupportedLanguage;
@@ -24,29 +24,6 @@ export interface TrackDownloadInfoOptions {
   readonly preview?: boolean;
 }
 
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function parseTracks(value: unknown): readonly Track[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter(isJsonObject).map((entry) => Track.fromJSON(entry));
-}
-
-function parseDownloadInfo(value: unknown): readonly TrackDownloadInfo[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter(isJsonObject)
-    .map((entry) => normalizeTopLevelKeys(entry) as Record<string, JsonValue>)
-    .map((entry) => entry as TrackDownloadInfo);
-}
-
 export class TracksResource {
   private readonly transport: HttpTransport;
 
@@ -55,7 +32,7 @@ export class TracksResource {
   }
 
   async byIds(
-    trackIds: readonly (string | number)[],
+    trackIds: readonly TrackId[],
     options: TracksByIdsOptions = {},
   ): Promise<readonly Track[]> {
     const response = await this.transport.request({
@@ -63,23 +40,16 @@ export class TracksResource {
       path: "/tracks",
       query: {
         lang: options.language,
-        "track-ids": trackIds.join(","),
+        "track-ids": joinIds(trackIds),
         "with-positions": options.withPositions,
       },
     });
 
-    return parseTracks(parseYandexApiResponse<unknown>(response));
-  }
-
-  async tracks(
-    trackIds: readonly (string | number)[],
-    options: TracksByIdsOptions = {},
-  ): Promise<readonly Track[]> {
-    return this.byIds(trackIds, options);
+    return parseObjectArrayResult(response, (entry) => Track.fromJSON(entry));
   }
 
   async downloadInfo(
-    trackId: string | number,
+    trackId: TrackId,
     options: TrackDownloadInfoOptions = {},
   ): Promise<readonly TrackDownloadInfo[]> {
     const response = await this.transport.request({
@@ -92,6 +62,6 @@ export class TracksResource {
       },
     });
 
-    return parseDownloadInfo(parseYandexApiResponse<unknown>(response));
+    return parseObjectArrayResult(response, (entry) => normalizeObject(entry) as TrackDownloadInfo);
   }
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { ApiSchemaError } from "../../src/core/errors.ts";
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/types.ts";
 import { Track } from "../../src/models/track/Track.ts";
 import { TracksResource } from "../../src/resources/tracks.ts";
@@ -95,4 +96,30 @@ test("tracks.downloadInfo serializes options and normalizes plain download paylo
       preview: false,
     },
   ]);
+});
+
+test("tracks.byIds rejects malformed result payloads", async () => {
+  const transport = new MockTransport({
+    body: {
+      result: {
+        id: 11,
+      },
+    },
+    headers: {},
+    status: 200,
+    statusText: "OK",
+    url: "https://api.music.yandex.net/tracks",
+  });
+
+  const resource = new TracksResource(transport);
+
+  await assert.rejects(
+    () => resource.byIds([11]),
+    (error: unknown) => {
+      assert.ok(error instanceof ApiSchemaError);
+      assert.equal(error.path, "$.result");
+      assert.equal(error.expected, "array");
+      return true;
+    },
+  );
 });

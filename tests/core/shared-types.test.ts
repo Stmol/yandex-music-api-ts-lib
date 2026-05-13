@@ -7,8 +7,8 @@ import type {
   JsonObject,
   JsonPrimitive,
   JsonValue,
-  NormalizeTopLevelKeys,
-} from "../../src/models/index.ts";
+} from "../../src/index.ts";
+import type { NormalizeTopLevelKeys } from "../../src/core/normalize.ts";
 
 type AssertTrue<TValue extends true> = TValue;
 type IsEqual<TLeft, TRight> =

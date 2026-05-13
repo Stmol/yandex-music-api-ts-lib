@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { expectJsonObject, normalizeObject } from "../../core/parsing.ts";
 import { Album } from "../album/Album.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Pager } from "../shared/Pager.ts";
@@ -22,19 +23,15 @@ export interface SearchShape extends Record<string, unknown> {
   playlists?: Pager<Playlist> | null;
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function parsePager<TItem>(
   value: JsonValue | undefined,
   parseItem: (entry: JsonObject) => TItem,
 ): Pager<TItem> | undefined {
-  if (!isJsonObject(value)) {
+  if (value === undefined) {
     return undefined;
   }
 
-  const normalized = normalizeTopLevelKeys(value) as Record<string, JsonValue>;
+  const normalized = normalizeObject(expectJsonObject(value, "$.pager")) as Record<string, JsonValue>;
   const pagerShape: {
     page?: number;
     perPage?: number;
@@ -46,36 +43,39 @@ function parsePager<TItem>(
   };
 
   if (Array.isArray(normalized.items)) {
-    pagerShape.items = normalized.items.filter(isJsonObject).map((entry) => parseItem(entry));
+    pagerShape.items = normalized.items.map((entry, index) =>
+      parseItem(expectJsonObject(entry, `$.pager.items[${index}]`)));
   }
 
   return new Pager<TItem>(pagerShape);
 }
 
 function parseBestResult(value: JsonValue | undefined): SearchBestResultShape | undefined {
-  if (!isJsonObject(value)) {
+  if (value === undefined) {
     return undefined;
   }
 
-  const normalized = normalizeTopLevelKeys(value) as Record<string, JsonValue>;
+  const normalized = normalizeObject(expectJsonObject(value, "$.best")) as Record<string, JsonValue>;
   const shape: SearchBestResultShape = { ...normalized };
 
-  if (!isJsonObject(normalized.result)) {
+  if (normalized.result === undefined || normalized.result === null) {
     return shape;
   }
 
+  const result = expectJsonObject(normalized.result, "$.best.result");
+
   switch (normalized.type) {
     case "artist":
-      shape.result = Artist.fromJSON(normalized.result);
+      shape.result = Artist.fromJSON(result);
       break;
     case "album":
-      shape.result = Album.fromJSON(normalized.result);
+      shape.result = Album.fromJSON(result);
       break;
     case "track":
-      shape.result = Track.fromJSON(normalized.result);
+      shape.result = Track.fromJSON(result);
       break;
     case "playlist":
-      shape.result = Playlist.fromJSON(normalized.result);
+      shape.result = Playlist.fromJSON(result);
       break;
     default:
       break;
@@ -94,14 +94,14 @@ export class Search {
   declare readonly playlists?: Pager<Playlist> | null;
 
   constructor(shape: SearchShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Search>(
     this: new (shape: SearchShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: SearchShape = { ...normalized };
     const best = parseBestResult(normalized.best);
     const artists = parsePager(normalized.artists, (entry) => Artist.fromJSON(entry));

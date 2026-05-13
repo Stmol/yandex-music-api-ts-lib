@@ -33,3 +33,22 @@ export class UnauthorizedError extends YandexMusicError {}
 export class NotFoundError extends YandexMusicError {}
 
 export class UnknownApiError extends YandexMusicError {}
+
+export interface ApiSchemaErrorOptions extends YandexMusicErrorOptions {
+  readonly expected: string;
+  readonly path: string;
+  readonly received: unknown;
+}
+
+export class ApiSchemaError extends YandexMusicError {
+  readonly expected: string;
+  readonly path: string;
+  readonly received: unknown;
+
+  constructor(message: string, options: ApiSchemaErrorOptions) {
+    super(message, options);
+    this.expected = options.expected;
+    this.path = options.path;
+    this.received = options.received;
+  }
+}

@@ -1,17 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { normalizeTopLevelKey, normalizeTopLevelKeys, YandexMusicModel } from "../../src/models/index.ts";
-
-class TestTrack extends YandexMusicModel<{
-  trackId: number;
-  title: string;
-  coverUri: string | null;
-}> {
-  declare readonly trackId: number;
-  declare readonly title: string;
-  declare readonly coverUri: string | null;
-}
+import { normalizeTopLevelKey, normalizeTopLevelKeys } from "../../src/core/normalize.ts";
 
 test("normalizeTopLevelKey converts upstream keys to camelCase", () => {
   assert.equal(normalizeTopLevelKey("track_id"), "trackId");
@@ -37,17 +27,4 @@ test("normalizeTopLevelKeys normalizes only the top level", () => {
       album_id: 202,
     },
   });
-});
-
-test("YandexMusicModel.fromJSON builds a typed model instance", () => {
-  const track = TestTrack.fromJSON({
-    track_id: 42,
-    title: "Song",
-    cover_uri: null,
-  } as const);
-
-  assert.ok(track instanceof TestTrack);
-  assert.equal(track.trackId, 42);
-  assert.equal(track.title, "Song");
-  assert.equal(track.coverUri, null);
 });
