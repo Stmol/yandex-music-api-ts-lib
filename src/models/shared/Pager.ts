@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject } from "../../core/parsing.ts";
 
 export interface PagerShape<TItem = unknown> extends Record<string, unknown> {
   page?: number;
@@ -17,14 +18,14 @@ export class Pager<TItem = unknown> {
   declare readonly items?: readonly TItem[];
 
   constructor(shape: PagerShape<TItem>) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TItem, TModel extends Pager<TItem>>(
     this: new (shape: PagerShape<TItem>) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeTopLevelKeys(json) as PagerShape<TItem>);
+    return new this(normalizeObject(json) as PagerShape<TItem>);
   }
 
   get hasNextPage(): boolean {

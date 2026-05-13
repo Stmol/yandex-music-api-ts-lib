@@ -1,14 +1,9 @@
-import type { JsonObject } from "../core/json.ts";
 import type { SupportedLanguage, HttpTransport } from "../http/types.ts";
-import { parseYandexApiResponse } from "../http/response.ts";
 import { Landing } from "../models/landing/Landing.ts";
+import { parseObjectResult } from "./parsing.ts";
 
 export interface LandingOptions {
   readonly language?: SupportedLanguage;
-}
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export class LandingResource {
@@ -27,8 +22,6 @@ export class LandingResource {
         lang: options.language,
       },
     });
-    const result = parseYandexApiResponse<unknown>(response);
-
-    return Landing.fromJSON(isJsonObject(result) ? result : {});
+    return Landing.fromJSON(parseObjectResult(response));
   }
 }

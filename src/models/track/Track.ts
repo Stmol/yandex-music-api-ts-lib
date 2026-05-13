@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { Album } from "../album/Album.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Cover } from "../shared/Cover.ts";
@@ -18,26 +19,6 @@ export interface MajorShape {
   name?: string;
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function parseArtists(value: JsonValue | undefined): readonly Artist[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value.filter(isJsonObject).map((entry) => Artist.fromJSON(entry));
-}
-
-function parseAlbums(value: JsonValue | undefined): readonly Album[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value.filter(isJsonObject).map((entry) => Album.fromJSON(entry));
-}
-
 export class Track {
   declare readonly id?: string | number;
   declare readonly realId?: string | number;
@@ -54,17 +35,23 @@ export class Track {
   declare readonly major?: MajorShape | null;
 
   constructor(shape: TrackShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Track>(
     this: new (shape: TrackShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: TrackShape = { ...normalized };
-    const artists = parseArtists(normalized.artists);
-    const albums = parseAlbums(normalized.albums);
+    const artists = parseOptionalJsonObjectArray(normalized.artists, "$.artists", (entry) =>
+      Artist.fromJSON(entry));
+    const albums = parseOptionalJsonObjectArray(normalized.albums, "$.albums", (entry) =>
+      Album.fromJSON(entry));
+    const cover = parseOptionalJsonObject(normalized.cover, "$.cover", (entry) =>
+      Cover.fromJSON(entry));
+    const major = parseOptionalJsonObject(normalized.major, "$.major", (entry) =>
+      normalizeObject(entry) as MajorShape);
 
     if (artists !== undefined) {
       shape.artists = artists;
@@ -74,13 +61,8 @@ export class Track {
       shape.albums = albums;
     }
 
-    if (isJsonObject(normalized.cover)) {
-      shape.cover = Cover.fromJSON(normalized.cover);
-    }
-
-    if (isJsonObject(normalized.major)) {
-      shape.major = normalizeTopLevelKeys(normalized.major) as MajorShape;
-    }
+    if (cover !== undefined) shape.cover = cover;
+    if (major !== undefined) shape.major = major;
 
     return new this(shape);
   }

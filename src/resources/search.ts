@@ -1,7 +1,6 @@
-import type { JsonObject } from "../core/json.ts";
 import type { SupportedLanguage, HttpTransport } from "../http/types.ts";
-import { parseYandexApiResponse } from "../http/response.ts";
 import { Search } from "../models/search/Search.ts";
+import { parseObjectResult } from "./parsing.ts";
 
 export type SearchType = "all" | "album" | "artist" | "playlist" | "track";
 
@@ -12,10 +11,6 @@ export interface SearchOptions {
   readonly pageSize?: number;
   readonly playlistInBest?: boolean;
   readonly type?: SearchType;
-}
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export class SearchResource {
@@ -39,8 +34,6 @@ export class SearchResource {
         "playlist-in-best": options.playlistInBest,
       },
     });
-    const result = parseYandexApiResponse<unknown>(response);
-
-    return Search.fromJSON(isJsonObject(result) ? result : {});
+    return Search.fromJSON(parseObjectResult(response));
   }
 }

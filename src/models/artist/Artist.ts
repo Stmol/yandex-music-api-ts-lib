@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObject } from "../../core/parsing.ts";
 import { Cover } from "../shared/Cover.ts";
 
 export interface ArtistCounts {
@@ -19,10 +20,6 @@ export interface ArtistShape extends Record<string, unknown> {
   cover?: Cover | null;
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 export class Artist {
   declare readonly id?: string | number;
   declare readonly name?: string;
@@ -33,23 +30,22 @@ export class Artist {
   declare readonly cover?: Cover | null;
 
   constructor(shape: ArtistShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Artist>(
     this: new (shape: ArtistShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: ArtistShape = { ...normalized };
+    const cover = parseOptionalJsonObject(normalized.cover, "$.cover", (entry) =>
+      Cover.fromJSON(entry));
+    const counts = parseOptionalJsonObject(normalized.counts, "$.counts", (entry) =>
+      normalizeObject(entry) as ArtistCounts);
 
-    if (isJsonObject(normalized.cover)) {
-      shape.cover = Cover.fromJSON(normalized.cover);
-    }
-
-    if (isJsonObject(normalized.counts)) {
-      shape.counts = normalizeTopLevelKeys(normalized.counts) as ArtistCounts;
-    }
+    if (cover !== undefined) shape.cover = cover;
+    if (counts !== undefined) shape.counts = counts;
 
     return new this(shape);
   }

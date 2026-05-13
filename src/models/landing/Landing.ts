@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 
 export interface LandingEntityShape {
   type?: string;
@@ -17,29 +18,14 @@ export interface LandingShape extends Record<string, unknown> {
   blocks?: readonly LandingBlockShape[];
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function parseEntities(value: JsonValue | undefined): readonly LandingEntityShape[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value
-    .filter(isJsonObject)
-    .map((entry) => normalizeTopLevelKeys(entry) as LandingEntityShape);
+  return parseOptionalJsonObjectArray(value, "$.entities", (entry) =>
+    normalizeObject(entry) as LandingEntityShape);
 }
 
 function parseBlocks(value: JsonValue | undefined): readonly LandingBlockShape[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value
-    .filter(isJsonObject)
-    .map((entry) => {
-      const normalized = normalizeTopLevelKeys(entry) as Record<string, JsonValue>;
+  return parseOptionalJsonObjectArray(value, "$.blocks", (entry) => {
+      const normalized = normalizeObject(entry) as Record<string, JsonValue>;
       const block: LandingBlockShape = { ...normalized };
       const entities = parseEntities(normalized.entities);
 
@@ -55,14 +41,14 @@ export class Landing {
   declare readonly blocks?: readonly LandingBlockShape[];
 
   constructor(shape: LandingShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Landing>(
     this: new (shape: LandingShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: LandingShape = { ...normalized };
     const blocks = parseBlocks(normalized.blocks);
 

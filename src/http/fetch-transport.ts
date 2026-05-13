@@ -275,8 +275,6 @@ export class FetchTransport implements HttpTransport {
       setHeader(headers, "Authorization", `OAuth ${oauthToken}`);
     }
 
-    const abort = createAbortSignal(timeoutMs, request.signal);
-
     for (let attempt = 0; ; attempt += 1) {
       const abort = createAbortSignal(timeoutMs, request.signal);
 

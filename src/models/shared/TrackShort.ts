@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject } from "../../core/parsing.ts";
 
 export interface TrackShortShape extends Record<string, unknown> {
   id?: string | number;
@@ -23,14 +24,14 @@ export class TrackShort {
   declare readonly contentWarning?: string | null;
 
   constructor(shape: TrackShortShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends TrackShort>(
     this: new (shape: TrackShortShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeTopLevelKeys(json) as TrackShortShape);
+    return new this(normalizeObject(json) as TrackShortShape);
   }
 
   get displayTitle(): string | null {

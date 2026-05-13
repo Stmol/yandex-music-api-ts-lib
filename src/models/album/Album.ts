@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Cover } from "../shared/Cover.ts";
 
@@ -17,18 +18,6 @@ export interface AlbumShape extends Record<string, unknown> {
   cover?: Cover | null;
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function parseArtists(value: JsonValue | undefined): readonly Artist[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value.filter(isJsonObject).map((entry) => Artist.fromJSON(entry));
-}
-
 export class Album {
   declare readonly id?: string | number;
   declare readonly title?: string;
@@ -43,24 +32,24 @@ export class Album {
   declare readonly cover?: Cover | null;
 
   constructor(shape: AlbumShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Album>(
     this: new (shape: AlbumShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: AlbumShape = { ...normalized };
-    const artists = parseArtists(normalized.artists);
+    const artists = parseOptionalJsonObjectArray(normalized.artists, "$.artists", (entry) =>
+      Artist.fromJSON(entry));
+    const cover = parseOptionalJsonObject(normalized.cover, "$.cover", (entry) =>
+      Cover.fromJSON(entry));
 
     if (artists !== undefined) {
       shape.artists = artists;
     }
-
-    if (isJsonObject(normalized.cover)) {
-      shape.cover = Cover.fromJSON(normalized.cover);
-    }
+    if (cover !== undefined) shape.cover = cover;
 
     return new this(shape);
   }

@@ -1,6 +1,3 @@
-export * from "../core/json.ts";
-export * from "../core/model.ts";
-export * from "../core/normalize.ts";
 export * from "./shared/Cover.ts";
 export * from "./shared/Pager.ts";
 export * from "./shared/TrackShort.ts";

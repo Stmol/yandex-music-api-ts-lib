@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { Track } from "../track/Track.ts";
 
 export interface MusicHistoryEntryShape {
@@ -13,27 +14,21 @@ export interface MusicHistoryShape extends Record<string, unknown> {
   entries?: readonly MusicHistoryEntryShape[];
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function parseEntries(value: JsonValue | undefined): readonly MusicHistoryEntryShape[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  return value
-    .filter(isJsonObject)
-    .map((entry) => {
-      const normalized = normalizeTopLevelKeys(entry) as Record<string, JsonValue>;
+  return parseOptionalJsonObjectArray(
+    value,
+    "$.entries",
+    (entry, path) => {
+      const normalized = normalizeObject(entry) as Record<string, JsonValue>;
       const shape: MusicHistoryEntryShape = { ...normalized };
+      const track = parseOptionalJsonObject(normalized.track, `${path}.track`, (trackEntry) =>
+        Track.fromJSON(trackEntry));
 
-      if (isJsonObject(normalized.track)) {
-        shape.track = Track.fromJSON(normalized.track);
-      }
+      if (track !== undefined) shape.track = track;
 
       return shape;
-    });
+    },
+  );
 }
 
 export class MusicHistory {
@@ -41,14 +36,14 @@ export class MusicHistory {
   declare readonly entries?: readonly MusicHistoryEntryShape[];
 
   constructor(shape: MusicHistoryShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends MusicHistory>(
     this: new (shape: MusicHistoryShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: MusicHistoryShape = { ...normalized };
     const entries = parseEntries(normalized.entries);
 

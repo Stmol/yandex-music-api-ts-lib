@@ -48,6 +48,9 @@ The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `pac
 npm install ya-music-api-ts-lib
 ```
 
+To access the Yandex Music API you need an OAuth token.
+One practical way to get it is [Stmol/yandex-oauth-token](https://github.com/Stmol/yandex-oauth-token).
+
 ## Usage
 
 ```ts
@@ -96,7 +99,8 @@ const client = new YandexMusicClient({
 await client.account.status();
 ```
 
-The Python Yandex Music repository is used only as a reference for translating proven model behavior into TypeScript. This package does not mirror the Python export surface automatically and does not rely on code generation.
+This repository was made possible by the prior work in [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music), which served as the implementation reference for translating proven Yandex Music API behavior into TypeScript.
+Many thanks to MarshalX for that work.
 
 ## Release Validation
 

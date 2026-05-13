@@ -45,12 +45,13 @@
     "build:tests": "node scripts/build-tests.mjs",
     "prepack": "npm run build",
     "check:types": "tsc -p tsconfig.json --noEmit",
+    "check:dead-code": "tsc -p tsconfig.json --noEmit --noUnusedLocals --noUnusedParameters",
     "test:node": "npm run build:tests && node scripts/run-node-tests.mjs",
     "test:meta": "npm run build:tests && node --test .tmp/tests/meta/package-contract.test.js",
     "test:coverage": "npm run build:tests && node scripts/run-node-tests.mjs --coverage",
     "test:bun": "bun test tests/runtime/bun-smoke.test.ts",
     "test:deno": "deno test --sloppy-imports tests/runtime/deno-smoke.test.ts",
-    "check": "npm run check:types && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
+    "check": "npm run check:types && npm run check:dead-code && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
   },
   "dependencies": {},
   "devDependencies": {

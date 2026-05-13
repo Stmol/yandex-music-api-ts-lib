@@ -1,5 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
-import { normalizeTopLevelKeys } from "../../core/normalize.ts";
+import { assignModelShape } from "../../core/model.ts";
+import { normalizeObject, parseOptionalJsonObject } from "../../core/parsing.ts";
 import { Cover } from "../shared/Cover.ts";
 
 export interface StationIdShape {
@@ -13,33 +14,28 @@ export interface StationShape extends Record<string, unknown> {
   icon?: Cover | null;
 }
 
-function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 export class Station {
   declare readonly id?: StationIdShape | null;
   declare readonly name?: string;
   declare readonly icon?: Cover | null;
 
   constructor(shape: StationShape) {
-    Object.assign(this, shape);
+    assignModelShape(this, shape);
   }
 
   static fromJSON<TModel extends Station>(
     this: new (shape: StationShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    const normalized = normalizeTopLevelKeys(json) as Record<string, JsonValue>;
+    const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: StationShape = { ...normalized };
+    const id = parseOptionalJsonObject(normalized.id, "$.id", (entry) =>
+      normalizeObject(entry) as StationIdShape);
+    const icon = parseOptionalJsonObject(normalized.icon, "$.icon", (entry) =>
+      Cover.fromJSON(entry));
 
-    if (isJsonObject(normalized.id)) {
-      shape.id = normalizeTopLevelKeys(normalized.id) as StationIdShape;
-    }
-
-    if (isJsonObject(normalized.icon)) {
-      shape.icon = Cover.fromJSON(normalized.icon);
-    }
+    if (id !== undefined) shape.id = id;
+    if (icon !== undefined) shape.icon = icon;
 
     return new this(shape);
   }

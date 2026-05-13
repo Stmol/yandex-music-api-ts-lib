@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { ApiSchemaError } from "../../src/core/errors.ts";
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/types.ts";
 import { AccountResource } from "../../src/resources/account.ts";
 
@@ -48,4 +49,28 @@ test("account.status builds the expected request and parses Status", async () =>
   });
   assert.equal(status.account?.displayName, "Listener");
   assert.equal(status.hasActiveSubscription, true);
+});
+
+test("account.status rejects malformed object payloads", async () => {
+  const transport = new MockTransport({
+    body: {
+      result: [],
+    },
+    headers: {},
+    status: 200,
+    statusText: "OK",
+    url: "https://api.music.yandex.net/users/account/status",
+  });
+
+  const resource = new AccountResource(transport);
+
+  await assert.rejects(
+    () => resource.status(),
+    (error: unknown) => {
+      assert.ok(error instanceof ApiSchemaError);
+      assert.equal(error.path, "$.result");
+      assert.equal(error.expected, "object");
+      return true;
+    },
+  );
 });

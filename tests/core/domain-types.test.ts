@@ -157,7 +157,10 @@ test("higher-level models keep curated nested parsing practical", () => {
 test("status, landing, station, and music history expose user-facing helpers", () => {
   const status = Status.fromJSON({
     plus: {
-      has_plus: true,
+      has_plus: false,
+    },
+    permissions: {
+      until: "2999-01-01T00:00:00Z",
     },
     account: {
       uid: 501,
