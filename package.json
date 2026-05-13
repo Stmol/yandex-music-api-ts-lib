@@ -1,0 +1,61 @@
+{
+  "name": "ya-music-api-ts-lib",
+  "version": "0.1.0",
+  "description": "Zero-dependency TypeScript client for the Yandex Music API.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stmol/yandex-music-api-ts-lib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Stmol/yandex-music-api-ts-lib/issues"
+  },
+  "homepage": "https://github.com/Stmol/yandex-music-api-ts-lib#readme",
+  "keywords": [
+    "yandex-music",
+    "yandex",
+    "music",
+    "api",
+    "typescript",
+    "esm"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "import": "./dist/models/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:tests": "node scripts/build-tests.mjs",
+    "prepack": "npm run build",
+    "check:types": "tsc -p tsconfig.json --noEmit",
+    "test:node": "npm run build:tests && node scripts/run-node-tests.mjs",
+    "test:meta": "npm run build:tests && node --test .tmp/tests/meta/package-contract.test.js",
+    "test:coverage": "npm run build:tests && node scripts/run-node-tests.mjs --coverage",
+    "test:bun": "bun test tests/runtime/bun-smoke.test.ts",
+    "test:deno": "deno test --sloppy-imports tests/runtime/deno-smoke.test.ts",
+    "check": "npm run check:types && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.0"
+  }
+}
