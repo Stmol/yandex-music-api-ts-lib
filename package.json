@@ -44,6 +44,7 @@
     "build": "node scripts/build.mjs",
     "build:tests": "node scripts/build-tests.mjs",
     "prepack": "npm run build",
+    "lint": "eslint .",
     "check:types": "tsc -p tsconfig.json --noEmit",
     "check:dead-code": "tsc -p tsconfig.json --noEmit --noUnusedLocals --noUnusedParameters",
     "test:node": "npm run build:tests && node scripts/run-node-tests.mjs",
@@ -51,12 +52,16 @@
     "test:coverage": "npm run build:tests && node scripts/run-node-tests.mjs --coverage",
     "test:bun": "bun test tests/runtime/bun-smoke.test.ts",
     "test:deno": "deno test --sloppy-imports tests/runtime/deno-smoke.test.ts",
-    "check": "npm run check:types && npm run check:dead-code && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
+    "check": "npm run lint && npm run check:types && npm run check:dead-code && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
   },
   "dependencies": {},
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.15.0",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.59.3"
   }
 }

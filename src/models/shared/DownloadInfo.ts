@@ -31,7 +31,7 @@ export class DownloadInfo {
     this: new (shape: DownloadInfoShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as DownloadInfoShape);
+    return new this(normalizeObject(json));
   }
 
   matches(codec: string, bitrateInKbps: number): boolean {

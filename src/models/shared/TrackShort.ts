@@ -31,7 +31,7 @@ export class TrackShort {
     this: new (shape: TrackShortShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as TrackShortShape);
+    return new this(normalizeObject(json));
   }
 
   get displayTitle(): string | null {

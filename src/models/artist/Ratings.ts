@@ -21,6 +21,6 @@ export class Ratings {
     this: new (shape: RatingsShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as RatingsShape);
+    return new this(normalizeObject(json));
   }
 }

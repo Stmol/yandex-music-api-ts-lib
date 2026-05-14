@@ -19,6 +19,6 @@ export class TrackPosition {
     this: new (shape: TrackPositionShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as TrackPositionShape);
+    return new this(normalizeObject(json));
   }
 }

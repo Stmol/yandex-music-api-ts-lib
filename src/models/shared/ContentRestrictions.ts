@@ -23,6 +23,6 @@ export class ContentRestrictions {
     this: new (shape: ContentRestrictionsShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as ContentRestrictionsShape);
+    return new this(normalizeObject(json));
   }
 }

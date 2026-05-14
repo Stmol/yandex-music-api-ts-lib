@@ -21,6 +21,6 @@ export class Vinyl {
     this: new (shape: VinylShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as VinylShape);
+    return new this(normalizeObject(json));
   }
 }

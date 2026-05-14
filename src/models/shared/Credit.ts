@@ -21,6 +21,6 @@ export class Credit {
     this: new (shape: CreditShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as CreditShape);
+    return new this(normalizeObject(json));
   }
 }

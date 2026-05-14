@@ -28,7 +28,7 @@ export interface TrackSupplementOptions {
 
 export interface TrackLyricsOptions {
   readonly language?: SupportedLanguage;
-  readonly format?: "TEXT" | "LRC" | string;
+  readonly format?: "TEXT" | "LRC" | (string & {});
   readonly timestamp?: string | number;
   readonly sign?: string;
 }

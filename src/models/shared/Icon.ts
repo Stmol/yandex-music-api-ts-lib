@@ -25,7 +25,7 @@ export class Icon {
     this: new (shape: IconShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as IconShape);
+    return new this(normalizeObject(json));
   }
 
   getUrl(size: CoverSize = "200x200"): string | null {

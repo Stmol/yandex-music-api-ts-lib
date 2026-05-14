@@ -23,6 +23,6 @@ export class ChartInfo {
     this: new (shape: ChartInfoShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as ChartInfoShape);
+    return new this(normalizeObject(json));
   }
 }

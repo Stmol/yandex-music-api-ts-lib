@@ -21,6 +21,6 @@ export class Disclaimer {
     this: new (shape: DisclaimerShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as DisclaimerShape);
+    return new this(normalizeObject(json));
   }
 }

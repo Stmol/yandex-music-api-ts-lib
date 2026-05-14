@@ -19,6 +19,6 @@ export class R128 {
     this: new (shape: R128Shape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as R128Shape);
+    return new this(normalizeObject(json));
   }
 }
