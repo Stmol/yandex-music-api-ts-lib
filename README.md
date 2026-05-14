@@ -6,7 +6,7 @@ Zero-dependency TypeScript package for the Yandex Music API.
 
 ## Status
 
-This repository is ready for the first public `v0.1` release.
+This repository is ready for the public `v0.2` release.
 
 Current scope:
 
