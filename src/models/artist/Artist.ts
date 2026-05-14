@@ -1,6 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
 import { assignModelShape } from "../../core/model.ts";
-import { normalizeObject, parseOptionalJsonObject } from "../../core/parsing.ts";
+import { expectJsonObject, normalizeObject, parseOptionalJsonObject } from "../../core/parsing.ts";
 import { Cover } from "../shared/Cover.ts";
 import { ArtistLink } from "./ArtistLink.ts";
 import { ArtistLinks } from "./ArtistLinks.ts";
@@ -90,12 +90,10 @@ function parseLinks(value: JsonValue | undefined): ArtistLinks | null | undefine
 
   if (Array.isArray(value)) {
     return new ArtistLinks({
-      links: value
-        .filter((entry): entry is JsonObject =>
-          typeof entry === "object" && entry !== null && !Array.isArray(entry))
-        .map((entry) => ArtistLink.fromJSON(entry)),
+      links: value.map((entry, index) =>
+        ArtistLink.fromJSON(expectJsonObject(entry, `$.links[${index}]`))),
     });
   }
 
-  return ArtistLinks.fromJSON(value as JsonObject);
+  return ArtistLinks.fromJSON(expectJsonObject(value, "$.links"));
 }

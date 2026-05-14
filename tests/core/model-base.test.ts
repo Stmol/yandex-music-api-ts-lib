@@ -5,7 +5,8 @@ import { normalizeTopLevelKey, normalizeTopLevelKeys } from "../../src/core/norm
 
 test("normalizeTopLevelKey converts upstream keys to camelCase", () => {
   assert.equal(normalizeTopLevelKey("track_id"), "trackId");
-  assert.equal(normalizeTopLevelKey("Cover-URI"), "coverURI");
+  assert.equal(normalizeTopLevelKey("Cover-URI"), "coverUri");
+  assert.equal(normalizeTopLevelKey("ogImage"), "ogImage");
   assert.equal(normalizeTopLevelKey(" title "), "title");
 });
 
@@ -26,5 +27,16 @@ test("normalizeTopLevelKeys normalizes only the top level", () => {
     nestedItem: {
       album_id: 202,
     },
+  });
+});
+
+test("normalizeTopLevelKeys keeps deterministic behavior for normalized key collisions", () => {
+  const normalized = normalizeTopLevelKeys({
+    track_id: 101,
+    "track-id": 202,
+  });
+
+  assert.deepEqual(normalized, {
+    trackId: 202,
   });
 });

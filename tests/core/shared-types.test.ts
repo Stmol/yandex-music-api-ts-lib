@@ -35,6 +35,16 @@ type NormalizeCheck = AssertTrue<
     }
   >
 >;
+type NormalizeUppercaseCheck = AssertTrue<
+  IsEqual<
+    NormalizeTopLevelKeys<{
+      "Cover-URI": string;
+    }>,
+    {
+      coverUri: string;
+    }
+  >
+>;
 type ReadonlyCheck = AssertTrue<
   IsEqual<
     DeepReadonly<{
@@ -51,11 +61,13 @@ type ReadonlyCheck = AssertTrue<
 const primitiveCheck: PrimitiveCheck = true;
 const valueCheck: ValueCheck = true;
 const normalizeCheck: NormalizeCheck = true;
+const normalizeUppercaseCheck: NormalizeUppercaseCheck = true;
 const readonlyCheck: ReadonlyCheck = true;
 
 void primitiveCheck;
 void valueCheck;
 void normalizeCheck;
+void normalizeUppercaseCheck;
 void readonlyCheck;
 
 test("shared type assertions compile and runtime exports stay usable", () => {

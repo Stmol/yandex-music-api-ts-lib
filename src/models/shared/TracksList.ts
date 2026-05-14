@@ -1,6 +1,7 @@
+import { ApiSchemaError } from "../../core/errors.ts";
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
 import { assignModelShape } from "../../core/model.ts";
-import { normalizeObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
+import { expectJsonArray, normalizeObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { TrackShort } from "./TrackShort.ts";
 
 export interface TracksListShape extends Record<string, unknown> {
@@ -32,11 +33,24 @@ export class TracksList {
       TrackShort.fromJSON(entry));
 
     if (items !== undefined) shape.items = items;
-    if (Array.isArray(normalized.trackIds)) {
-      shape.trackIds = normalized.trackIds.filter((entry): entry is string | number =>
-        typeof entry === "string" || typeof entry === "number");
+    if (normalized.trackIds !== undefined) {
+      shape.trackIds = expectJsonArray(normalized.trackIds, "$.trackIds").map((entry, index) =>
+        parseTrackId(entry, `$.trackIds[${index}]`));
     }
 
     return new this(shape);
   }
+}
+
+function parseTrackId(value: JsonValue, path: string): string | number {
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+
+  throw new ApiSchemaError(`Expected string or number at ${path}.`, {
+    details: value,
+    expected: "string or number",
+    path,
+    received: value,
+  });
 }

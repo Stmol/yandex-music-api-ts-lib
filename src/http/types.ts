@@ -22,18 +22,27 @@ export interface HttpRetryPolicy {
   readonly retryOnStatuses?: readonly number[];
 }
 
-export interface HttpRequest {
+interface HttpRequestBase {
   readonly body?: BodyInit | null;
   readonly headers?: HttpHeaderMap;
   readonly method?: HttpMethod;
   readonly oauthToken?: string;
-  readonly path?: string;
   readonly query?: HttpQueryParams;
   readonly retry?: HttpRetryPolicy;
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
-  readonly url?: string;
 }
+
+export type HttpRequest = HttpRequestBase & (
+  | {
+    readonly path: string;
+    readonly url?: never;
+  }
+  | {
+    readonly path?: never;
+    readonly url: string;
+  }
+);
 
 export interface HttpResponse {
   readonly body: HttpResponseBody;

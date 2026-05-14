@@ -1,6 +1,6 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
 import { assignModelShape } from "../../core/model.ts";
-import { expectJsonObject, normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
+import { expectJsonArray, expectJsonObject, normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Cover } from "../shared/Cover.ts";
 import { Track } from "../track/Track.ts";
@@ -70,17 +70,10 @@ export class Album {
     if (trackPosition !== undefined) shape.trackPosition = trackPosition;
     if (deprecation !== undefined) shape.deprecation = deprecation;
     if (tracks !== undefined) shape.tracks = tracks;
-    if (Array.isArray(normalized.volumes)) {
-      shape.volumes = normalized.volumes.map((volume, volumeIndex) => {
-        if (!Array.isArray(volume)) {
-          return [];
-        }
-
-        const volumeEntries = volume as readonly JsonValue[];
-
-        return volumeEntries.map((entry, trackIndex) =>
-          Track.fromJSON(parseVolumeTrack(entry, `$.volumes[${volumeIndex}][${trackIndex}]`)));
-      });
+    if (normalized.volumes !== undefined) {
+      shape.volumes = expectJsonArray(normalized.volumes, "$.volumes").map((volume, volumeIndex) =>
+        expectJsonArray(volume, `$.volumes[${volumeIndex}]`).map((entry, trackIndex) =>
+          Track.fromJSON(parseVolumeTrack(entry, `$.volumes[${volumeIndex}][${trackIndex}]`))));
     }
 
     return new this(shape);

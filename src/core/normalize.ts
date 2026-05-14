@@ -18,10 +18,22 @@ export type NormalizeTopLevelKeys<TValue> = TValue extends readonly unknown[]
     : TValue;
 
 export function normalizeTopLevelKey(key: string): string {
-  return key
-    .trim()
-    .replace(/[-_\s]+([a-zA-Z0-9])/g, (_, value: string) => value.toUpperCase())
-    .replace(/^[A-Z]/, (value) => value.toLowerCase());
+  const trimmed = key.trim();
+
+  if (!/[-_\s]/.test(trimmed)) {
+    return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+  }
+
+  const [head, ...tail] = trimmed.split(/[-_\s]+/);
+
+  return [
+    head?.toLowerCase() ?? "",
+    ...tail.map((part) => {
+      const normalized = part.toLowerCase();
+
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    }),
+  ].join("");
 }
 
 export function normalizeTopLevelKeys<TValue extends JsonObject>(
