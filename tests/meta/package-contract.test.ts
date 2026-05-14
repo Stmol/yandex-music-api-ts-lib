@@ -25,7 +25,7 @@ test("package metadata matches the zero-dependency runtime contract", () => {
   assert.equal(pkg.bugs?.url, "https://github.com/Stmol/yandex-music-api-ts-lib/issues");
 });
 
-test("root package exports representative v0.5 write helpers", () => {
+test("root package exports representative v0.6 write helpers", () => {
   assert.equal(typeof root.PlaylistDiffBuilder, "function");
   assert.equal(typeof root.serializePlaylistDiff, "function");
 });
@@ -38,6 +38,7 @@ test("models subpath exports representative v0.4 read-only models", () => {
   assert.equal(typeof models.Wave, "function");
   assert.equal(typeof models.Product, "function");
   assert.equal(typeof models.PlaylistTrailer, "function");
+  assert.equal(typeof models.PlaylistRecommendations, "function");
   assert.equal(typeof models.ArtistClips, "function");
   assert.equal(typeof models.Block, "function");
   assert.equal(typeof models.Sequence, "function");

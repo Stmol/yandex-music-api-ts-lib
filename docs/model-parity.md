@@ -33,7 +33,6 @@ This report intentionally tracks read-only model coverage only. Resource endpoin
 ## Report Exclusions
 
 - No resource endpoint coverage.
-- No write-method coverage, including the v0.5 playlists and likes/dislikes write subset.
+- No write-method coverage, including the v0.6 playlists and likes/dislikes write subset.
 - No device auth.
 - No Ynison websocket clients.
-

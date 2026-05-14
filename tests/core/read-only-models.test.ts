@@ -64,6 +64,7 @@ import { MetatagPlaylists } from "../../src/models/metatag/MetatagPlaylists.ts";
 import { MetatagTitle } from "../../src/models/metatag/MetatagTitle.ts";
 import { MetatagTree } from "../../src/models/metatag/MetatagTree.ts";
 import { PlaylistId } from "../../src/models/playlist/PlaylistId.ts";
+import { PlaylistRecommendations } from "../../src/models/playlist/PlaylistRecommendations.ts";
 import { PlaylistSimilarEntities } from "../../src/models/playlist/PlaylistSimilarEntities.ts";
 import { PlaylistTrailer } from "../../src/models/playlist/PlaylistTrailer.ts";
 import { Sequence } from "../../src/models/radio/Sequence.ts";
@@ -436,6 +437,10 @@ test("Expanded existing nested families parse nested models", () => {
   const generatedPlaylist = GeneratedPlaylist.fromJSON({
     playlist: { kind: 1, title: "Daily" },
   });
+  const playlistRecommendations = PlaylistRecommendations.fromJSON({
+    batch_id: "batch-1",
+    tracks: [{ id: 1, title: "Recommended" }],
+  });
   const day = Day.fromJSON({
     day: "2026-05-14",
     events: [{ type: "track", data: { track: { id: 1, title: "Track" } } }],
@@ -461,6 +466,8 @@ test("Expanded existing nested families parse nested models", () => {
   assert.ok(chart.items?.[0] instanceof ChartItem);
   assert.ok(chart.items?.[0]?.track instanceof Track);
   assert.ok(generatedPlaylist.playlist instanceof Playlist);
+  assert.equal(playlistRecommendations.batchId, "batch-1");
+  assert.ok(playlistRecommendations.tracks?.[0] instanceof Track);
   assert.ok(day.events?.[0] instanceof Event);
   assert.ok(day.events?.[0]?.data instanceof TrackWithAds);
   assert.ok(trackWithAds.track instanceof Track);
