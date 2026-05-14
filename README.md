@@ -18,12 +18,14 @@ Current scope:
 - zero-runtime-dependency package contract checks
 - Node test-build pipeline
 - runtime smoke tests for Node.js, Bun, and Deno
+- LLM-oriented project map for agent handoffs and code navigation
 - release validation workflow for typecheck, Node tests, Bun smoke tests, Deno smoke tests, and package dry-run on pushed release tags
 
 Beta scope:
 
 - curated handwritten models for account, artist, album, track, playlist, search, landing, feed, genre, queue, radio, history, and shared read-only shapes
 - expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
+- v0.4 read-only model parity wave covering clip, concert, label, metatag, shot, skeleton, wave, and expanded nested account/artist/album/landing/playlist/radio/history/track shapes
 - read-only account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history resources
 - `fetch`-based default transport with OAuth header support
 - custom transport injection for tests and advanced runtime integration
@@ -32,7 +34,7 @@ Beta scope:
 Known gaps:
 
 - not all Yandex Music API models and endpoints are covered yet
-- write/download-heavy flows, likes/pins, playlist mutations, and radio feedback are outside the current read-only scope
+- write-heavy flows, likes/pins, playlist mutations, and radio feedback are outside the current scope
 - no live API integration tests are included, so the test suite does not require secrets or network access
 - no CommonJS build is published
 - no browser-specific support matrix is documented yet
@@ -43,6 +45,12 @@ Published package surface:
 - `ya-music-api-ts-lib/models`
 
 The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `package.json`.
+
+## Project Boundaries
+
+This package is a read-only API client focused on typed response parsing, transport behavior, and stable package exports.
+
+For the full agent-facing map of project scope and conventions, see [LLM Project Map](docs/LLM.md).
 
 ## Roadmap
 
@@ -59,8 +67,11 @@ Current project state:
 
 Planned next milestones:
 
+- [ ] Release v0.4 with expanded read-only model parity against MarshalX/yandex-music-api
+- [ ] Release v0.5 with playlist mutation support, playlist item modifications, and the first wider set of API write methods
+- [ ] Continue remaining model parity alongside the new mutation surface
 - [ ] Add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
-- [ ] Start write-heavy flows as separate resources for likes/dislikes, playlist mutations, queue updates, and radio feedback
+- [ ] Expand write-heavy flows after playlist support with likes/dislikes, queue updates, radio feedback, and adjacent mutation resources
 - [ ] Freeze the stable public API, compatibility policy, changelog, and release process
 
 ## Installation
@@ -129,6 +140,28 @@ const client = new YandexMusicClient({
 await client.account.status();
 ```
 
+## Model Parity
+
+The project tracks read-only model coverage against [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music).
+
+See [Model Parity](docs/model-parity.md) for the current local coverage table and explicit exclusions.
+
+Model parity here means typed parsing of API response shapes and practical nested model coverage.
+
+## Agent Orientation
+
+AI agents and automation should start with [LLM Project Map](docs/LLM.md).
+
+It documents:
+
+- project purpose and current scope boundaries
+- public package surface and runtime assumptions
+- source tree map for `client`, `http`, `resources`, `models`, and `core`
+- model/resource implementation patterns
+- export rules and known naming collisions such as `LandingTrackId`
+- test layout and validation commands
+- model parity workflow and v0.4 direction
+
 This repository was made possible by the prior work in [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music), which served as the implementation reference for translating proven Yandex Music API behavior into TypeScript.
 Many thanks to MarshalX for that work.
 
@@ -139,6 +172,8 @@ It validates typecheck, Node tests, Bun smoke tests, Deno smoke tests, and `npm 
 
 ## Development
 
+Start with [LLM Project Map](docs/LLM.md) if you are an AI agent or if you need a fast architecture overview.
+
 ```fish
 npm run check:types
 npm run build
@@ -148,4 +183,10 @@ npm run test:node
 npm run test:bun
 npm run test:deno
 npm pack --dry-run
+```
+
+Regenerate the model parity report after adding or removing model files:
+
+```fish
+node scripts/model-parity.mjs
 ```

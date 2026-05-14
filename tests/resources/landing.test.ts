@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/types.ts";
+import { Day } from "../../src/models/feed/Day.ts";
+import { Event } from "../../src/models/feed/Event.ts";
 import { Feed } from "../../src/models/feed/Feed.ts";
+import { Block } from "../../src/models/landing/Block.ts";
+import { BlockEntity } from "../../src/models/landing/BlockEntity.ts";
 import { ChartInfo } from "../../src/models/landing/ChartInfo.ts";
 import { Landing } from "../../src/models/landing/Landing.ts";
 import { LandingList } from "../../src/models/landing/LandingList.ts";
@@ -34,6 +38,15 @@ test("landing.landing serializes block lists and parses Landing blocks", async (
             id: "new-playlists",
             type: "playlists",
             title: "New playlists",
+            entities: [
+              {
+                type: "track",
+                data: {
+                  id: 11,
+                  title: "Track",
+                },
+              },
+            ],
           },
         ],
       },
@@ -56,6 +69,9 @@ test("landing.landing serializes block lists and parses Landing blocks", async (
   });
   assert.ok(landing instanceof Landing);
   assert.equal(landing.blockCount, 1);
+  assert.ok(landing.blocks?.[0] instanceof Block);
+  assert.ok(landing.blocks?.[0]?.entities?.[0] instanceof BlockEntity);
+  assert.ok(landing.blocks?.[0]?.entities?.[0]?.data instanceof Track);
   assert.equal(landing.findBlock("playlists")?.title, "New playlists");
 });
 
@@ -174,6 +190,8 @@ test("landing expanded read-only endpoints build paths and parse model results",
   assert.ok(podcasts.tracks?.[0] instanceof Track);
   assert.ok(tags instanceof TagResult);
   assert.ok(feed instanceof Feed);
+  assert.ok(feed.days?.[0] instanceof Day);
+  assert.ok(feed.days?.[0]?.events?.[0] instanceof Event);
   assert.equal(isWizardPassed, true);
 });
 

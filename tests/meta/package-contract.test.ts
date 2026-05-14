@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import pkg from "../../package.json" with { type: "json" };
+import * as models from "../../src/models/index.ts";
 
 test("package metadata matches the zero-dependency runtime contract", () => {
   assert.equal(pkg.type, "module");
@@ -21,4 +22,17 @@ test("package metadata matches the zero-dependency runtime contract", () => {
   assert.ok(pkg.engines.bun);
   assert.equal(pkg.repository?.type, "git");
   assert.equal(pkg.bugs?.url, "https://github.com/Stmol/yandex-music-api-ts-lib/issues");
+});
+
+test("models subpath exports representative v0.4 read-only models", () => {
+  assert.equal(typeof models.Clip, "function");
+  assert.equal(typeof models.Concert, "function");
+  assert.equal(typeof models.Label, "function");
+  assert.equal(typeof models.Metatag, "function");
+  assert.equal(typeof models.Wave, "function");
+  assert.equal(typeof models.Product, "function");
+  assert.equal(typeof models.PlaylistTrailer, "function");
+  assert.equal(typeof models.ArtistClips, "function");
+  assert.equal(typeof models.Block, "function");
+  assert.equal(typeof models.Sequence, "function");
 });
