@@ -2,13 +2,23 @@
 
 This file is a machine-oriented usage guide for agents that consume `ya-music-api-ts-lib` inside another TypeScript project.
 
+Policy references:
+
+- Runtime and browser compatibility: [runtime-compatibility.md](./runtime-compatibility.md)
+- Error and transport behavior: [error-transport-contract.md](./error-transport-contract.md)
+- Compatibility guarantees: [compatibility-policy.md](./compatibility-policy.md)
+- Release checklist: [release-process.md](./release-process.md)
+- Planned stable release notes: [../CHANGELOG.md](../CHANGELOG.md)
+
 ## Package
 
 - Package: `ya-music-api-ts-lib`
 - Models subpath: `ya-music-api-ts-lib/models`
-- Module format: ESM
+- Module format: ESM only
 - Runtime dependencies: none
-- Runtime baseline: Node.js `>=22`, Bun `>=1.1`, and Deno-compatible ESM imports
+- Stable runtime baseline: Node.js `>=22`, Bun `>=1.1`
+- Verified compatibility: Deno `2.x` via ESM imports and the runtime smoke test
+- Browser support: available only in fetch-compatible environments, but not part of the CI release gate yet
 - Authentication: pass a Yandex Music OAuth token as `oauthToken`
 
 ```ts
@@ -21,11 +31,19 @@ const client = new YandexMusicClient({
 
 ## Client Construction
 
-Use the root export for the API client and transport types.
+Use the root export for the API client, error classes, and transport types.
 
 ```ts
 import {
+  AbortError,
+  BadRequestError,
+  NetworkError,
+  NotFoundError,
+  TimeoutError,
+  UnauthorizedError,
+  UnknownApiError,
   YandexMusicClient,
+  YandexMusicError,
   type HttpRequest,
   type HttpResponse,
   type HttpTransport,
@@ -37,10 +55,37 @@ Constructor options:
 - `oauthToken` - bearer token for Yandex Music API requests.
 - `baseUrl` - override API base URL.
 - `defaultHeaders` - headers added to every request.
-- `defaultTimeoutMs` - default request timeout.
-- `defaultRetry` - retry policy for the fetch transport.
-- `fetch` - custom fetch-compatible function.
-- `transport` - full custom `HttpTransport`; when set, built-in fetch options are bypassed.
+- `defaultTimeoutMs` - default request timeout. Library default: `10_000`.
+- `defaultRetry` - retry policy for the built-in fetch transport.
+- `fetch` - custom fetch-compatible function. Use this when the host runtime provides `fetch` through a wrapper.
+- `transport` - full custom `HttpTransport`; when set, built-in fetch behavior is bypassed entirely.
+
+## Transport Contract
+
+`HttpRequest` must contain exactly one of:
+
+- `path` - resolved against `https://api.music.yandex.net`
+- `url` - used as-is
+
+Other request fields:
+
+- `method` defaults to `GET`
+- `query` supports string, number, boolean, null, undefined, and arrays of those values
+- `oauthToken` overrides the constructor token for one request
+- `signal` supports external cancellation
+- `timeoutMs` overrides the constructor timeout for one request
+- `retry` overrides the constructor retry policy for one request
+
+Built-in `FetchTransport` behavior:
+
+- sends `Accept: application/json` by default
+- injects `Authorization: OAuth <token>` when a token is available and the request did not already define `authorization`
+- retries only idempotent methods by default: `GET`
+- retries only on `408`, `425`, `429`, `500`, `502`, `503`, `504`
+- default retry values: `maxRetries=2`, `baseDelayMs=250`, `maxDelayMs=2000`
+- respects `Retry-After` when present
+- does not retry malformed JSON responses
+- does not retry aborts or non-idempotent methods unless the caller changes the retry policy
 
 Custom transport shape:
 
@@ -79,8 +124,8 @@ const client = new YandexMusicClient({ transport: new MockTransport() });
 Common option fields:
 
 - `language`: `"ru" | "en" | "uk" | "kk" | "be"`
-- `page`, `pageSize`: pagination where supported.
-- IDs accept `string | number` unless a method documents a narrower shape.
+- `page`, `pageSize`: pagination where supported
+- IDs accept `string | number` unless a method documents a narrower shape
 
 ## Account
 
@@ -340,11 +385,11 @@ const track = Track.fromJSON({ id: 1, title: "Song" });
 
 Model behavior:
 
-- API `snake_case` fields are normalized to top-level `camelCase`.
-- Fields are intentionally optional because Yandex Music payloads vary by endpoint.
-- Nested known entities are parsed into model instances where the library has a model.
-- Unknown fields are preserved on the model object when they appear in the normalized shape.
-- Treat model instances as read-only data.
+- API `snake_case` fields are normalized to top-level `camelCase`
+- fields are intentionally optional because Yandex Music payloads vary by endpoint
+- nested known entities are parsed into model instances where the library has a model
+- unknown fields are preserved on the model object when they appear in the normalized shape
+- treat model instances as read-only data
 
 Useful model families:
 
@@ -362,13 +407,6 @@ Useful model families:
 The HTTP layer unwraps Yandex Music API response envelopes and throws typed errors.
 
 ```ts
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-  YandexMusicError,
-} from "ya-music-api-ts-lib";
-
 try {
   await client.tracks.byIds(["bad-id"]);
 } catch (error) {
@@ -378,8 +416,16 @@ try {
     // Requested API object was not found.
   } else if (error instanceof BadRequestError) {
     // Request shape or id value was rejected.
+  } else if (error instanceof TimeoutError) {
+    // The built-in timeout expired.
+  } else if (error instanceof AbortError) {
+    // The caller cancelled the request.
+  } else if (error instanceof NetworkError) {
+    // Fetch failed before an HTTP response was produced.
+  } else if (error instanceof UnknownApiError) {
+    // Non-mapped API or response parsing failure.
   } else if (error instanceof YandexMusicError) {
-    // Library-level API, schema, network, timeout, or abort error.
+    // Other library-level typed failure.
   }
 }
 ```
@@ -396,21 +442,29 @@ Exported error classes:
 - `TimeoutError`
 - `AbortError`
 
+Each typed error may include:
+
+- `status` for HTTP-aware failures
+- `url` for the resolved request URL when available
+- `details` for API payloads or malformed response bodies
+- `cause` when the failure wraps an underlying runtime error
+
 ## Runtime Notes
 
-- The default transport uses the runtime `fetch`.
-- In Node.js, use Node `>=22` or provide a custom `fetch`.
-- The package is ESM-only; use `import`, not `require`.
-- The package does not include a CommonJS build.
+- The package is ESM-only. Use `import`, not `require`.
+- The package does not publish a CommonJS build.
 - The package does not manage OAuth token acquisition.
-- Mutation methods call real Yandex Music write endpoints; do not run them in tests or automation unless the caller intentionally wants account changes.
+- The default transport depends on `fetch`, `URL`, `Headers`, `Request`, `Response`, `AbortController`, and timers from the host runtime.
+- Browser usage is acceptable only when the application is comfortable exposing the OAuth token to that environment and can tolerate the lack of browser CI coverage.
+- Mutation methods call real Yandex Music write endpoints. Do not run them in tests or automation unless the caller intentionally wants account changes.
 
 ## Import Checklist For Agents
 
 1. Install `ya-music-api-ts-lib`.
 2. Read OAuth token from the host app's secret store or environment.
-3. Construct one `YandexMusicClient` per token/configuration.
-4. Use resource methods instead of constructing API URLs manually.
-5. Use returned model fields with optional chaining.
-6. Catch `YandexMusicError` or narrower subclasses at integration boundaries.
-7. For tests, inject a custom `HttpTransport` instead of calling live Yandex Music endpoints.
+3. Prefer server-side integration for production credentials.
+4. Construct one `YandexMusicClient` per token/configuration.
+5. Use resource methods instead of constructing API URLs manually.
+6. Use returned model fields with optional chaining.
+7. Catch `YandexMusicError` or narrower subclasses at integration boundaries.
+8. For tests, inject a custom `HttpTransport` instead of calling live Yandex Music endpoints.

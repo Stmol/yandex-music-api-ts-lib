@@ -7,6 +7,7 @@ on:
       - "**"
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   test:
@@ -47,6 +48,9 @@ jobs:
 
       - name: Node tests
         run: npm run test:node
+
+      - name: Package contract tests
+        run: npm run test:meta
 
       - name: Bun smoke tests
         run: npm run test:bun

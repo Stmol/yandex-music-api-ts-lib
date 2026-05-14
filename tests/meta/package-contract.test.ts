@@ -1,25 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { Buffer } from "node:buffer";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { Buffer } from "node:buffer";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import pkg from "../../package.json" with { type: "json" };
+import {
+  combineExpectedExportNames,
+  MODELS_DECLARATION_ONLY_EXPORTS,
+  MODELS_RUNTIME_EXPORTS,
+  readDeclarationExportNames,
+  readRuntimeExportNames,
+  ROOT_DECLARATION_ONLY_EXPORTS,
+  ROOT_RUNTIME_ONLY_EXPORTS,
+} from "./export-surface.ts";
 
 const execFileAsync = promisify(execFile);
 const rootDir = path.resolve(import.meta.dirname, "..", "..", "..");
-
-async function importDistModule(modulePath: string) {
-  const module: unknown = await import(pathToFileURL(path.join(rootDir, modulePath)).href);
-
-  assert.equal(typeof module, "object");
-  assert.notEqual(module, null);
-
-  return module as Record<string, unknown>;
-}
+const expectedModelsDeclarationExports = combineExpectedExportNames(
+  MODELS_RUNTIME_EXPORTS,
+  MODELS_DECLARATION_ONLY_EXPORTS,
+);
+const expectedRootRuntimeExports = combineExpectedExportNames(
+  MODELS_RUNTIME_EXPORTS,
+  ROOT_RUNTIME_ONLY_EXPORTS,
+);
+const expectedRootDeclarationExports = combineExpectedExportNames(
+  expectedModelsDeclarationExports,
+  ROOT_DECLARATION_ONLY_EXPORTS,
+);
 
 async function listPackedFiles() {
   const packDir = await mkdtemp(path.join(tmpdir(), "ya-music-api-pack-"));
@@ -104,6 +115,10 @@ test("package metadata matches the zero-dependency runtime contract", () => {
     import: "./dist/models/index.js",
     types: "./dist/models/index.d.ts",
   });
+  assert.deepEqual(
+    Object.values(pkg.exports).map((entry) => Object.keys(entry).sort()),
+    [["import", "types"], ["import", "types"]],
+  );
   assert.ok(pkg.engines.node);
   assert.ok(pkg.engines.bun);
   assert.equal(pkg.repository?.type, "git");
@@ -124,37 +139,58 @@ test("dist declarations follow the package export contract", async () => {
   }
 });
 
-test("root package imports representative v0.6 write helpers from dist", async () => {
-  const root = await importDistModule(pkg.exports["."].import);
+test("root package runtime exports stay frozen", async () => {
+  const runtimeExports = await readRuntimeExportNames(rootDir, pkg.exports["."].import);
 
-  assert.equal(typeof root.PlaylistDiffBuilder, "function");
-  assert.equal(typeof root.serializePlaylistDiff, "function");
+  assert.deepEqual(runtimeExports, expectedRootRuntimeExports);
 });
 
-test("models subpath imports representative v0.4 read-only models from dist", async () => {
-  const models = await importDistModule(pkg.exports["./models"].import);
+test("models subpath runtime exports stay frozen", async () => {
+  const runtimeExports = await readRuntimeExportNames(rootDir, pkg.exports["./models"].import);
 
-  assert.equal(typeof models.Clip, "function");
-  assert.equal(typeof models.Concert, "function");
-  assert.equal(typeof models.Label, "function");
-  assert.equal(typeof models.Metatag, "function");
-  assert.equal(typeof models.Wave, "function");
-  assert.equal(typeof models.Product, "function");
-  assert.equal(typeof models.PlaylistTrailer, "function");
-  assert.equal(typeof models.PlaylistRecommendations, "function");
-  assert.equal(typeof models.ArtistClips, "function");
-  assert.equal(typeof models.Block, "function");
-  assert.equal(typeof models.Sequence, "function");
+  assert.deepEqual(runtimeExports, combineExpectedExportNames(MODELS_RUNTIME_EXPORTS));
 });
 
-test("npm tarball contains the dist package surface", async () => {
+test("root package declaration exports stay frozen", () => {
+  const declarationExports = readDeclarationExportNames(rootDir, pkg.exports["."].types);
+
+  assert.deepEqual(declarationExports, expectedRootDeclarationExports);
+});
+
+test("models subpath declaration exports stay frozen", () => {
+  const declarationExports = readDeclarationExportNames(rootDir, pkg.exports["./models"].types);
+
+  assert.deepEqual(declarationExports, expectedModelsDeclarationExports);
+});
+
+test("runtime exports remain a subset of declaration exports", async () => {
+  const rootRuntimeExports = await readRuntimeExportNames(rootDir, pkg.exports["."].import);
+  const modelRuntimeExports = await readRuntimeExportNames(rootDir, pkg.exports["./models"].import);
+  const rootDeclarationExports = readDeclarationExportNames(rootDir, pkg.exports["."].types);
+  const modelDeclarationExports = readDeclarationExportNames(rootDir, pkg.exports["./models"].types);
+
+  assert.deepEqual(rootRuntimeExports.filter((name) => !rootDeclarationExports.includes(name)), []);
+  assert.deepEqual(modelRuntimeExports.filter((name) => !modelDeclarationExports.includes(name)), []);
+});
+
+test("npm tarball contains the export-targeted package surface only", async () => {
   const files = await listPackedFiles();
+  const exportTargets = Object.values(pkg.exports)
+    .flatMap((entry) => [entry.import, entry.types])
+    .map((file) => `package/${file.replace(/^\.\//u, "")}`);
 
-  assert.ok(files.includes("package/dist/index.js"));
-  assert.ok(files.includes("package/dist/index.d.ts"));
-  assert.ok(files.includes("package/dist/models/index.js"));
-  assert.ok(files.includes("package/dist/models/index.d.ts"));
+  for (const exportTarget of exportTargets) {
+    assert.ok(files.includes(exportTarget), `Expected tarball to include ${exportTarget}`);
+  }
+
   assert.ok(files.includes("package/package.json"));
+  assert.ok(files.includes("package/README.md"));
+  assert.ok(files.includes("package/LICENSE"));
   assert.equal(files.some((file) => file.endsWith(".d.ts.map")), false);
+  assert.equal(files.some((file) => file.endsWith(".js.map")), false);
+  assert.equal(files.some((file) => file.endsWith(".ts") && !file.endsWith(".d.ts")), false);
   assert.equal(files.some((file) => file.startsWith("package/src/")), false);
+  assert.equal(files.some((file) => file.startsWith("package/tests/")), false);
+  assert.equal(files.some((file) => file.startsWith("package/scripts/")), false);
+  assert.equal(files.some((file) => file.startsWith("package/.tmp/")), false);
 });

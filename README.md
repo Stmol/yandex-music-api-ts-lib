@@ -6,7 +6,7 @@ Zero-dependency TypeScript package for the Yandex Music API.
 
 ## Status
 
-This repository is ready for public release.
+This repository is in `v1.0.0` stabilization mode.
 
 Current scope:
 
@@ -19,9 +19,10 @@ Current scope:
 - Node test-build pipeline
 - runtime smoke tests for Node.js, Bun, and Deno
 - LLM-oriented usage map for agents integrating the package into applications
-- release validation workflow for typecheck, Node tests, Bun smoke tests, Deno smoke tests, and package dry-run on pushed release tags
+- release validation workflow for lint, typecheck, dead-code checks, runtime smoke tests, and package dry-run
+- documented runtime compatibility, error/transport contract, compatibility policy, and release process for the stable line
 
-Beta scope:
+Stable `v1.0.0` target scope:
 
 - curated handwritten models for account, artist, album, track, playlist, search, landing, feed, genre, queue, radio, history, and shared read-only shapes
 - expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
@@ -34,24 +35,81 @@ Beta scope:
 
 Known gaps:
 
-- not all Yandex Music API models and endpoints are covered yet
-- write-heavy flows beyond the current playlists and likes/dislikes support remain outside the current scope, including pins, queue updates, radio feedback, presaves, device auth, and Ynison clients
-- no live API integration tests are included, so the test suite does not require secrets or network access
-- no CommonJS build is published
-- no browser-specific support matrix is documented yet
+- **No CommonJS build** is published.
+- **No browser CI smoke test** is part of the release gate yet.
+- **Live integration tests are opt-in**: they exist for local/manual release confidence, but they are not part of the default PR gate.
 
 Published package surface:
 
 - `ya-music-api-ts-lib`
 - `ya-music-api-ts-lib/models`
 
-The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `package.json`.
+Deep imports from internal package paths are not part of the public API contract.
+
+The npm package currently includes only `dist`, `README.md`, and `LICENSE` in addition to `package.json`.
 
 ## Project Boundaries
 
 This package is a read-mostly API client focused on typed response parsing, transport behavior, stable package exports, and an explicit write subset for playlists and likes/dislikes.
 
 For machine-readable integration guidance, see [LLM Usage Map](docs/LLM.md).
+
+## Runtime Compatibility
+
+Stable runtime baseline:
+
+- Node.js `>=22`
+- Bun `>=1.1`
+
+Verified compatibility:
+
+- Deno `2.x` through the repository smoke test
+
+Best-effort compatibility:
+
+- browser and edge runtimes with standards-compatible `fetch`, `URL`, `Headers`, `Request`, `Response`, `AbortController`, and timers
+
+Important caveat: browser support is documented, but it is not yet part of the CI release gate. Treat it as an application-owned integration choice, especially because OAuth token handling in browsers may be unacceptable for many production setups.
+
+Full policy: [docs/runtime-compatibility.md](docs/runtime-compatibility.md)
+
+## Transport And Errors
+
+The built-in transport is `fetch`-based and has a stable documented contract:
+
+- default `Accept: application/json`
+- OAuth header injection when a token is provided and `authorization` is not already set
+- default timeout: `10_000 ms`
+- default retries only for `GET`
+- default retriable statuses: `408`, `425`, `429`, `500`, `502`, `503`, `504`
+- default retry settings: `maxRetries=2`, `baseDelayMs=250`, `maxDelayMs=2000`
+- support for `AbortSignal`, per-request retry overrides, and full `HttpTransport` replacement
+
+Typed exported errors:
+
+- `YandexMusicError`
+- `BadRequestError`
+- `UnauthorizedError`
+- `NotFoundError`
+- `UnknownApiError`
+- `ApiSchemaError`
+- `NetworkError`
+- `TimeoutError`
+- `AbortError`
+
+Full contract: [docs/error-transport-contract.md](docs/error-transport-contract.md)
+
+## Compatibility Policy
+
+Starting with `v1.0.0`, the project intends to follow semantic versioning for:
+
+- root and models entrypoints
+- exported TypeScript API
+- documented `YandexMusicClient` options and resource names
+- documented transport and error behavior
+- published runtime baselines
+
+Policy details: [docs/compatibility-policy.md](docs/compatibility-policy.md)
 
 ## Checkpoints
 
@@ -67,14 +125,18 @@ Current checkpoints:
 - [x] Likes/dislikes reads and mutations, including clip likes
 - [x] Node.js, Bun, and Deno smoke tests
 - [x] Package contract tests
+- [x] Runtime/browser documentation
+- [x] Error/transport contract documentation
+- [x] Compatibility policy
+- [x] Release process documentation
+- [x] Changelog draft for `v1.0.0`
+- [x] Opt-in live integration tests
 
 Remaining checkpoints:
 
 - [ ] Continue remaining model parity alongside the current mutation surface
-- [ ] Add opt-in live integration tests
-- [ ] Document browser/runtime support and stabilize error/transport docs
+- [ ] Add browser CI coverage if browser support should become release-gated
 - [ ] Expand write-heavy flows with queue updates, radio feedback, pins, presaves, and adjacent mutation resources
-- [ ] Freeze the stable public API, compatibility policy, changelog, and release process
 
 ## Installation
 
@@ -160,13 +222,25 @@ const client = new YandexMusicClient({
 await client.account.status();
 ```
 
-## Model Parity
+## API Coverage
 
-The project tracks read-only model coverage against [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music).
+| Group | Read | Write |
+|---|---|---|
+| **Account** | `status` | — |
+| **Tracks** | `byIds`, `downloadInfo`, `supplement`, `lyrics`, `similar`, `trailer`, `fullInfo` | — |
+| **Albums** | `byIds`, `withTracks`, `similarEntities`, `trailer` | — |
+| **Artists** | `byIds`, `briefInfo`, `tracks`, `albums` (x5 sort variants), `similar`, `links`, `info`, `trackIds` | — |
+| **Search** | `search` (type filter: all/album/artist/playlist/track), `searchSuggest` | — |
+| **Landing / Feed** | `landing`, `chart`, `newReleases`, `newPlaylists`, `podcasts`, `tags`, `feed`, `feedWizardIsPassed` | — |
+| **Genres** | `list` | — |
+| **Playlists** | `list`, `get`, `byKinds`, `recommendations`, `byUuid`, `similarEntities`, `byIds`, `listShort`, `personal`, `trailer`, `kinds` | `create`, `delete`, `rename`, `setVisibility`, `setDescription`, `change`, `insertTrack`, `deleteTracks`, `moveTrack`, `moveTracks`, `collectiveJoin`, `PlaylistDiffBuilder` |
+| **Likes / Dislikes** | `likedTracks`, `likedAlbums`, `likedArtists`, `likedPlaylists`, `likedClips`, `dislikedTracks`, `dislikedArtists` | `addTracks` / `removeTracks`, `addAlbums` / `removeAlbums`, `addArtists` / `removeArtists`, `addPlaylists` / `removePlaylists`, `addClip` / `removeClip`, `addTrackDislikes` / `removeTrackDislikes`, `addArtistDislikes` / `removeArtistDislikes` |
+| **Radio** | `accountStatus`, `stationsDashboard`, `stationsList`, `stationInfo`, `stationTracks` | — |
+| **History** | `musicHistory`, `musicHistoryItems` | — |
 
-See [Model Parity](docs/model-parity.md) for the current local coverage table and explicit exclusions.
+**Transport:** `fetch`-based with OAuth header injection, configurable retry policy, 10s timeout, `Retry-After` support, `AbortSignal` support, and custom `HttpTransport` injection for testing.
 
-Model parity here means typed parsing of API response shapes and practical nested model coverage.
+**Total:** about 60 methods across 11 resource groups.
 
 ## LLM Usage Map
 
@@ -180,13 +254,21 @@ It documents:
 - models, error handling, and custom transport injection
 - integration checklist for tests and automation
 
+## Changelog And Release Process
+
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Release process: [docs/release-process.md](docs/release-process.md)
+- Manual live workflow: `.github/workflows/live-tests.yml`
+
+The CI workflow runs on pull requests, branch pushes, and tags matching `v*`.
+The default CI gate verifies lint, typecheck, dead-code checks, Node tests, package-contract tests, Bun smoke tests, Deno smoke tests, and `npm pack --dry-run`.
+Opt-in live integration tests run separately through `npm run test:live` or the manual GitHub Actions workflow.
+
+## Acknowledgements
+
 This repository was made possible by the prior work in [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music), which served as the implementation reference for translating proven Yandex Music API behavior into TypeScript.
+
 Many thanks to MarshalX for that work.
-
-## Release Validation
-
-The GitHub Actions workflow runs only when a new release tag is pushed.
-It validates typecheck, Node tests, Bun smoke tests, Deno smoke tests, and `npm pack --dry-run`.
 
 ## Development
 
@@ -198,10 +280,29 @@ npm run build
 npm run build:tests
 npm run test:meta
 npm run test:node
+npm run test:live
 npm run test:bun
 npm run test:deno
 npm pack --dry-run
 ```
+
+Local live test env:
+
+```fish
+set -x YANDEX_MUSIC_LIVE 1
+set -x YANDEX_MUSIC_OAUTH_TOKEN <oauth-token>
+npm run test:live
+```
+
+Optional mutation smoke:
+
+```fish
+set -x YANDEX_MUSIC_LIVE_MUTATION 1
+set -x YANDEX_MUSIC_TEST_USER_ID <uid>
+npm run test:live
+```
+
+For the full release gate, see [docs/release-process.md](docs/release-process.md).
 
 Regenerate the model parity report after adding or removing model files:
 

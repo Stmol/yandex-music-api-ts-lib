@@ -1,6 +1,6 @@
 {
   "name": "ya-music-api-ts-lib",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "Zero-dependency TypeScript client for the Yandex Music API.",
   "license": "MIT",
   "type": "module",
@@ -47,12 +47,13 @@
     "lint": "eslint .",
     "check:types": "tsc -p tsconfig.json --noEmit",
     "check:dead-code": "tsc -p tsconfig.json --noEmit --noUnusedLocals --noUnusedParameters",
-    "test:node": "npm run build && npm run build:tests && node scripts/run-node-tests.mjs",
-    "test:meta": "npm run build && npm run build:tests && node --test .tmp/tests/meta/package-contract.test.js",
-    "test:coverage": "npm run build && npm run build:tests && node scripts/run-node-tests.mjs --coverage",
+    "test:node": "npm run build && npm run build:tests && node scripts/run-node-tests.mjs --exclude meta --exclude live",
+    "test:meta": "npm run build && npm run build:tests && node scripts/run-node-tests.mjs --include meta",
+    "test:live": "node scripts/run-live-tests.mjs",
+    "test:coverage": "npm run build && npm run build:tests && node scripts/run-node-tests.mjs --coverage --exclude meta --exclude live",
     "test:bun": "bun test tests/runtime/bun-smoke.test.ts",
     "test:deno": "deno test --sloppy-imports tests/runtime/deno-smoke.test.ts",
-    "check": "npm run lint && npm run check:types && npm run check:dead-code && npm run test:node && npm run test:bun && npm run test:deno && npm pack --dry-run"
+    "check": "npm run lint && npm run check:types && npm run check:dead-code && npm run test:node && npm run test:meta && npm run test:bun && npm run test:deno && npm pack --dry-run"
   },
   "dependencies": {},
   "devDependencies": {
