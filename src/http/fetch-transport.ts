@@ -90,6 +90,7 @@ function createAbortSignal(
 
   if (externalSignal) {
     if (externalSignal.aborted) {
+      abortedExternally = true;
       controller.abort(externalSignal.reason);
     } else {
       externalSignal.addEventListener("abort", abortFromExternalSignal, { once: true });
@@ -203,6 +204,39 @@ function shouldRetryResponse(
     && retryPolicy.retryOnStatuses.includes(response.status);
 }
 
+function resolveRequestUrl(baseUrl: string, request: HttpRequest): URL {
+  const path = (request as { readonly path?: unknown }).path;
+  const url = (request as { readonly url?: unknown }).url;
+  const hasPath = path !== undefined;
+  const hasUrl = url !== undefined;
+
+  if (hasPath === hasUrl) {
+    throw new TypeError("HttpRequest must include exactly one of path or url.");
+  }
+
+  if (hasPath) {
+    if (typeof path !== "string") {
+      throw new TypeError("HttpRequest path must be a string.");
+    }
+
+    return new URL(joinUrl(baseUrl, path));
+  }
+
+  if (typeof url !== "string") {
+    throw new TypeError("HttpRequest url must be a string.");
+  }
+
+  return new URL(url);
+}
+
+async function discardResponseBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Ignore cleanup failures so retry behavior is driven by the original response status.
+  }
+}
+
 async function readResponseBody(response: Response): Promise<HttpResponse["body"]> {
   if (response.status === 204 || response.status === 205) {
     return null;
@@ -259,9 +293,7 @@ export class FetchTransport implements HttpTransport {
     const method = request.method ?? "GET";
     const retryPolicy = resolveRetryPolicy(this.#defaultRetry, request.retry);
     const timeoutMs = request.timeoutMs ?? this.#defaultTimeoutMs;
-    const url = new URL(
-      request.url ?? joinUrl(this.#baseUrl, request.path ?? ""),
-    );
+    const url = resolveRequestUrl(this.#baseUrl, request);
 
     appendQuery(url, request.query);
 
@@ -296,6 +328,7 @@ export class FetchTransport implements HttpTransport {
         const response = await this.#fetch(url, init);
 
         if (shouldRetryResponse(method, response, retryPolicy, attempt)) {
+          await discardResponseBody(response);
           await waitForRetry(getRetryDelayMs(attempt, retryPolicy, response), request.signal);
           continue;
         }
@@ -327,6 +360,10 @@ export class FetchTransport implements HttpTransport {
             cause,
             url: url.toString(),
           });
+        }
+
+        if (cause instanceof UnknownApiError) {
+          throw cause;
         }
 
         if (shouldRetryMethod(method, retryPolicy) && shouldRetryAttempt(attempt, retryPolicy)) {

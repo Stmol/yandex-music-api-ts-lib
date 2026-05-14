@@ -1,7 +1,10 @@
 name: CI
 
 on:
+  pull_request:
   push:
+    branches:
+      - "**"
     tags:
       - "v*"
 
@@ -38,6 +41,9 @@ jobs:
 
       - name: Typecheck
         run: npm run check:types
+
+      - name: Dead code check
+        run: npm run check:dead-code
 
       - name: Node tests
         run: npm run test:node

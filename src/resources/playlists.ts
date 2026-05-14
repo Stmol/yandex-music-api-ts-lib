@@ -13,6 +13,7 @@ import { PlaylistRecommendations } from "../models/playlist/PlaylistRecommendati
 import { PlaylistSimilarEntities } from "../models/playlist/PlaylistSimilarEntities.ts";
 import { PlaylistsList } from "../models/playlist/PlaylistsList.ts";
 import { PlaylistTrailer } from "../models/playlist/PlaylistTrailer.ts";
+import { createFormBody, FORM_URLENCODED_HEADERS } from "./form.ts";
 import { parseObjectArrayResult, parseObjectResult } from "./parsing.ts";
 
 export type PlaylistVisibility = "private" | "public";
@@ -84,26 +85,6 @@ export interface PlaylistDeleteDiffOperation {
 }
 
 export type PlaylistDiffOperation = PlaylistInsertDiffOperation | PlaylistDeleteDiffOperation;
-
-function createFormBody(
-  entries: Readonly<Record<string, string | number | boolean | readonly (string | number | boolean)[]>>,
-): URLSearchParams {
-  const body = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(entries)) {
-    if (Array.isArray(value)) {
-      for (const entry of value) {
-        body.append(key, String(entry));
-      }
-
-      continue;
-    }
-
-    body.set(key, String(value));
-  }
-
-  return body;
-}
 
 function createPlaylistInsertOperation(
   at: number,
@@ -225,9 +206,7 @@ export class PlaylistsResource {
       body: createFormBody({
         kinds,
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists`,
     });
@@ -339,9 +318,7 @@ export class PlaylistsResource {
         title: options.title,
         visibility: options.visibility ?? "public",
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists/create`,
     });
@@ -365,9 +342,7 @@ export class PlaylistsResource {
       body: createFormBody({
         value: name,
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/name`,
     });
@@ -384,9 +359,7 @@ export class PlaylistsResource {
       body: createFormBody({
         value: visibility,
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/visibility`,
     });
@@ -403,9 +376,7 @@ export class PlaylistsResource {
       body: createFormBody({
         value: description,
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/description`,
     });
@@ -424,9 +395,7 @@ export class PlaylistsResource {
         kind,
         revision: options.revision,
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/change`,
     });

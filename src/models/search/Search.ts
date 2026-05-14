@@ -6,6 +6,7 @@ import { Artist } from "../artist/Artist.ts";
 import { Pager } from "../shared/Pager.ts";
 import { Track } from "../track/Track.ts";
 import { Playlist } from "../playlist/Playlist.ts";
+import { parseSearchBestResult } from "./BestResult.ts";
 
 export interface SearchBestResultShape {
   type?: string;
@@ -26,9 +27,13 @@ export interface SearchShape extends Record<string, unknown> {
 function parsePager<TItem>(
   value: JsonValue | undefined,
   parseItem: (entry: JsonObject) => TItem,
-): Pager<TItem> | undefined {
+): Pager<TItem> | null | undefined {
   if (value === undefined) {
     return undefined;
+  }
+
+  if (value === null) {
+    return null;
   }
 
   const normalized = normalizeObject(expectJsonObject(value, "$.pager")) as Record<string, JsonValue>;
@@ -50,40 +55,6 @@ function parsePager<TItem>(
   return new Pager<TItem>(pagerShape);
 }
 
-function parseBestResult(value: JsonValue | undefined): SearchBestResultShape | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const normalized = normalizeObject(expectJsonObject(value, "$.best")) as Record<string, JsonValue>;
-  const shape: SearchBestResultShape = { ...normalized };
-
-  if (normalized.result === undefined || normalized.result === null) {
-    return shape;
-  }
-
-  const result = expectJsonObject(normalized.result, "$.best.result");
-
-  switch (normalized.type) {
-    case "artist":
-      shape.result = Artist.fromJSON(result);
-      break;
-    case "album":
-      shape.result = Album.fromJSON(result);
-      break;
-    case "track":
-      shape.result = Track.fromJSON(result);
-      break;
-    case "playlist":
-      shape.result = Playlist.fromJSON(result);
-      break;
-    default:
-      break;
-  }
-
-  return shape;
-}
-
 export class Search {
   declare readonly text?: string;
   declare readonly noCorrect?: boolean;
@@ -103,7 +74,7 @@ export class Search {
   ): TModel {
     const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: SearchShape = { ...normalized };
-    const best = parseBestResult(normalized.best);
+    const best = parseSearchBestResult(normalized.best);
     const artists = parsePager(normalized.artists, (entry) => Artist.fromJSON(entry));
     const albums = parsePager(normalized.albums, (entry) => Album.fromJSON(entry));
     const tracks = parsePager(normalized.tracks, (entry) => Track.fromJSON(entry));

@@ -11,8 +11,16 @@ const child = spawn(process.execPath, [tscPath, "-p", "tsconfig.test.json"], {
   stdio: "inherit",
 });
 
-const code = await new Promise((resolve) => child.on("exit", resolve));
+const { code, signal } = await new Promise((resolve, reject) => {
+  child.on("error", reject);
+  child.on("exit", (code, signal) => resolve({ code, signal }));
+});
+
+if (signal !== null) {
+  console.error(`Test build failed: tsc exited with signal ${signal}.`);
+  process.exit(1);
+}
 
 if (code !== 0) {
-  process.exit(Number(code));
+  process.exit(code ?? 1);
 }

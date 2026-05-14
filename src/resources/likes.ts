@@ -1,7 +1,6 @@
 import type { ArtistId, TrackId, UserId } from "../core/identifiers.ts";
 import { encodePathSegment, joinIds } from "../core/identifiers.ts";
-import type { JsonObject } from "../core/json.ts";
-import { expectJsonObject } from "../core/parsing.ts";
+import { expectJsonObject, isJsonObject } from "../core/parsing.ts";
 import type { HttpResponse, HttpTransport } from "../http/types.ts";
 import { parseYandexApiResponse } from "../http/response.ts";
 import { Artist } from "../models/artist/Artist.ts";
@@ -9,6 +8,7 @@ import { ClipsWillLike } from "../models/clip/ClipsWillLike.ts";
 import { Like } from "../models/shared/Like.ts";
 import { TracksList } from "../models/shared/TracksList.ts";
 import type { AlbumId } from "./albums.ts";
+import { createFormBody, FORM_URLENCODED_HEADERS } from "./form.ts";
 import { parseObjectArrayResult, parseObjectResult } from "./parsing.ts";
 
 export type LikeId = string | number;
@@ -40,26 +40,12 @@ export interface LikedClipsOptions {
   readonly pageSize?: number;
 }
 
-function createFormBody(entries: Readonly<Record<string, string | number>>): URLSearchParams {
-  const body = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(entries)) {
-    body.set(key, String(value));
-  }
-
-  return body;
-}
-
 function normalizeIds<TId extends LikeId>(ids: LikeIds<TId>): readonly TId[] {
   if (typeof ids === "string" || typeof ids === "number") {
     return [ids];
   }
 
   return ids;
-}
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseMutationSuccess(response: HttpResponse, acceptsRevisionObject: boolean): boolean {
@@ -202,9 +188,7 @@ export class LikesResource {
       body: createFormBody({
         [`${objectType}-ids`]: joinIds(normalizeIds(ids)),
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(options.userId)}/likes/${objectType}s/${remove ? "remove" : "add-multiple"}`,
     });
@@ -222,9 +206,7 @@ export class LikesResource {
       body: createFormBody({
         [`${objectType}-ids`]: joinIds(normalizeIds(ids)),
       }),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
+      headers: FORM_URLENCODED_HEADERS,
       method: "POST",
       path: `/users/${encodePathSegment(options.userId)}/dislikes/${objectType}s/${remove ? "remove" : "add-multiple"}`,
     });
