@@ -20,8 +20,7 @@ export interface HttpLogEventBase {
   readonly url: string;
 }
 
-export interface HttpRequestLogEvent extends HttpLogEventBase {
-}
+export type HttpRequestLogEvent = HttpLogEventBase;
 
 export interface HttpResponseLogEvent extends HttpLogEventBase {
   readonly durationMs: number;
