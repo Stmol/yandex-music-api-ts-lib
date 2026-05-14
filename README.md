@@ -27,6 +27,7 @@ Beta scope:
 - expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
 - v0.4 read-only model parity wave covering clip, concert, label, metatag, shot, skeleton, wave, and expanded nested account/artist/album/landing/playlist/radio/history/track shapes
 - read-only account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history resources
+- v0.5 write subset for playlist creation, playlist metadata mutations, playlist item insert/delete, and likes/dislikes mutations
 - `fetch`-based default transport with OAuth header support
 - custom transport injection for tests and advanced runtime integration
 - ESM package exports for the root client API and the models subpath
@@ -34,7 +35,7 @@ Beta scope:
 Known gaps:
 
 - not all Yandex Music API models and endpoints are covered yet
-- write-heavy flows, likes/pins, playlist mutations, and radio feedback are outside the current scope
+- write-heavy flows beyond v0.5 playlists and likes/dislikes remain outside the current scope, including pins, queue updates, radio feedback, presaves, device auth, and Ynison clients
 - no live API integration tests are included, so the test suite does not require secrets or network access
 - no CommonJS build is published
 - no browser-specific support matrix is documented yet
@@ -48,7 +49,7 @@ The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `pac
 
 ## Project Boundaries
 
-This package is a read-only API client focused on typed response parsing, transport behavior, and stable package exports.
+This package is a read-mostly API client focused on typed response parsing, transport behavior, stable package exports, and an explicit v0.5 write subset for playlists and likes/dislikes.
 
 For the full agent-facing map of project scope and conventions, see [LLM Project Map](docs/LLM.md).
 
@@ -67,11 +68,11 @@ Current project state:
 
 Planned next milestones:
 
-- [ ] Release v0.4 with expanded read-only model parity against MarshalX/yandex-music-api
-- [ ] Release v0.5 with playlist mutation support, playlist item modifications, and the first wider set of API write methods
+- [x] Release v0.4 with expanded read-only model parity against MarshalX/yandex-music-api
+- [x] Release v0.5 with playlist mutation support, playlist item modifications, and the first wider set of API write methods
 - [ ] Continue remaining model parity alongside the new mutation surface
 - [ ] Add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
-- [ ] Expand write-heavy flows after playlist support with likes/dislikes, queue updates, radio feedback, and adjacent mutation resources
+- [ ] Expand write-heavy flows after playlist support with queue updates, radio feedback, pins, presaves, and adjacent mutation resources
 - [ ] Freeze the stable public API, compatibility policy, changelog, and release process
 
 ## Installation
@@ -108,6 +109,21 @@ const artistLinks = await client.artists.links(7015718, {
 });
 const historyItems = await client.history.musicHistoryItems({
   trackIds: [{ trackId: 11, albumId: 22 }],
+});
+
+const playlist = await client.playlists.create(501, {
+  title: "Road Mix",
+  visibility: "private",
+});
+
+await client.playlists.insertTrack(501, playlist.kind ?? 100, {
+  albumId: 22,
+  revision: playlist.revision ?? 1,
+  trackId: 11,
+});
+
+await client.likes.addTracks(["11:22"], {
+  userId: 501,
 });
 ```
 

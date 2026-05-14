@@ -53,6 +53,18 @@ class RecordingTransport implements HttpTransport {
       };
     }
 
+    if (request.path === "/users/501/likes/albums/add-multiple") {
+      return {
+        body: {
+          result: "ok",
+        },
+        headers: {},
+        status: 200,
+        statusText: "OK",
+        url: "https://api.music.yandex.net/users/501/likes/albums/add-multiple",
+      };
+    }
+
     throw new Error(`Unexpected request path: ${request.path ?? "<missing>"}`);
   }
 }
@@ -96,6 +108,7 @@ test("YandexMusicClient uses FetchTransport by default and remains immutable", a
   assert.equal(client.account, client.account);
   assert.equal(client.artists, client.artists);
   assert.equal(client.landing, client.landing);
+  assert.equal(client.likes, client.likes);
   assert.equal(client.playlists, client.playlists);
   assert.equal(client.search, client.search);
   assert.equal(client.tracks, client.tracks);
@@ -115,10 +128,12 @@ test("YandexMusicClient wires all resources through the provided transport", asy
     language: "en",
     type: "track",
   });
+  const liked = await client.likes.addAlbums([1], { userId: 501 });
 
-  assert.equal(transport.requests.length, 2);
+  assert.equal(transport.requests.length, 3);
   assert.equal(transport.requests[0]?.path, "/users/account/status");
   assert.equal(transport.requests[1]?.path, "/search");
+  assert.equal(transport.requests[2]?.path, "/users/501/likes/albums/add-multiple");
   assert.deepEqual(transport.requests[0]?.query, {
     lang: "en",
   });
@@ -133,4 +148,5 @@ test("YandexMusicClient wires all resources through the provided transport", asy
   });
   assert.equal(status.hasActiveSubscription, true);
   assert.equal(search.tracks?.items?.length, 1);
+  assert.equal(liked, true);
 });

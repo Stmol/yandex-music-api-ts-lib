@@ -57,7 +57,7 @@ function renderMarkdown(localGroups) {
     "",
     "Reference: `MarshalX/yandex-music-api/yandex_music`.",
     "",
-    "This report intentionally tracks read-only model coverage only. Write-heavy flows, device auth, and Ynison websocket clients are outside this library milestone.",
+    "This report intentionally tracks read-only model coverage only. Resource endpoint coverage and write-method coverage are tracked in README.md and docs/LLM.md instead.",
     "",
     "| Group | Upstream Files | Local Files | v0.4 Status |",
     "| --- | ---: | ---: | --- |",
@@ -75,9 +75,10 @@ function renderMarkdown(localGroups) {
   }
 
   lines.push("");
-  lines.push("## v0.4 Exclusions");
+  lines.push("## Report Exclusions");
   lines.push("");
-  lines.push("- No write-heavy resources.");
+  lines.push("- No resource endpoint coverage.");
+  lines.push("- No write-method coverage, including the v0.5 playlists and likes/dislikes write subset.");
   lines.push("- No device auth.");
   lines.push("- No Ynison websocket clients.");
   lines.push("");

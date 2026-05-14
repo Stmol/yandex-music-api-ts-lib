@@ -4,12 +4,13 @@ This file is a compact orientation guide for AI coding agents working in this re
 
 ## Project In One Sentence
 
-`ya-music-api-ts-lib` is a zero-dependency ESM TypeScript client for read-only Yandex Music API usage, with handwritten models, a fetch-based HTTP transport, and smoke tests for Node.js, Bun, and Deno.
+`ya-music-api-ts-lib` is a zero-dependency ESM TypeScript client for read-mostly Yandex Music API usage, with handwritten models, a fetch-based HTTP transport, a small explicit v0.5 write subset, and smoke tests for Node.js, Bun, and Deno.
 
 ## Hard Boundaries
 
-- Keep write-heavy API flows out of scope unless the user explicitly changes project direction: likes/dislikes mutations, playlist mutations, pins, queue updates, radio feedback, presaves, device auth, and Ynison websocket clients.
+- Keep write-heavy API flows out of scope unless they are part of the explicit v0.5 write subset: playlist mutations and likes/dislikes mutations are supported; pins, queue updates, radio feedback, presaves, device auth, and Ynison websocket clients remain out of scope.
 - Keep the package zero-runtime-dependency.
+- Do not add live write tests to the default suite. Write methods are covered with mock transports and must not require OAuth tokens, secrets, or network access.
 
 ## Public Package Surface
 
@@ -56,6 +57,7 @@ Defines `YandexMusicClient`. It creates and freezes resource instances:
 - `genres`
 - `history`
 - `landing`
+- `likes`
 - `playlists`
 - `radio`
 - `search`
@@ -82,7 +84,7 @@ Agents adding endpoints should use `HttpTransport.request()` and resource parsin
 
 Resource layer. Each file maps methods to API paths and query parameters, then parses responses into models.
 
-Current read-only resources:
+Current read-mostly resources:
 
 - `account.ts`
 - `albums.ts`
@@ -90,6 +92,7 @@ Current read-only resources:
 - `genres.ts`
 - `history.ts`
 - `landing.ts`
+- `likes.ts`
 - `playlists.ts`
 - `radio.ts`
 - `search.ts`
@@ -106,6 +109,8 @@ const response = await this.transport.request({
 
 return SomeModel.fromJSON(parseObjectResult(response));
 ```
+
+Write resource methods use the same `HttpTransport.request()` API with `POST` and `BodyInit` payloads. Playlist and likes/dislikes mutations use form-encoded request bodies matching the MarshalX endpoint behavior; music history items use JSON.
 
 Use helpers from `src/resources/parsing.ts`:
 
@@ -312,9 +317,9 @@ node scripts/model-parity.mjs
 
 The parity goal means typed parsing of API response shapes and useful nested model coverage. Device auth, websocket clients, and write-heavy resource families are still separate concerns.
 
-## Current v0.4 Direction
+## v0.4 Milestone
 
-The v0.4 work is a read-only model parity wave. Newly covered or expanded families include:
+The v0.4 release completed a read-only model parity wave. Newly covered or expanded families include:
 
 - `clip`
 - `concert`
@@ -326,6 +331,17 @@ The v0.4 work is a read-only model parity wave. Newly covered or expanded famili
 - expanded `account`, `artist`, `feed`, `history`, `landing`, `playlist`, `radio`, `track`, and `shared`
 
 Still partial or intentionally deferred areas are tracked in `docs/model-parity.md`.
+
+## v0.5 Milestone
+
+The v0.5 release introduces the first supported write surface while keeping the client read-mostly:
+
+- playlist creation, deletion, rename, visibility, description, raw `change`, track insertion, and track range deletion
+- playlist diff helpers via `PlaylistDiffBuilder` and `serializePlaylistDiff`
+- likes/dislikes mutations for tracks, albums, artists, and playlists where supported by the API
+- mock-transport tests for request path, form body serialization, response parsing, and public exports
+
+Still out of scope: pins, queue updates, radio feedback, presaves, device auth, Ynison websocket clients, and live integration tests in the default suite.
 
 ## Do Not Accidentally Break These Contracts
 

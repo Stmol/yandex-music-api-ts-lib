@@ -62,6 +62,28 @@ export type {
   LandingTagOptions,
 } from "./resources/landing.js";
 export type {
+  LikeId,
+  LikeIds,
+  LikesMutationOptions,
+  PlaylistLikeId,
+} from "./resources/likes.js";
+export type { LikesResource } from "./resources/likes.js";
+export {
+  PlaylistDiffBuilder,
+  serializePlaylistDiff,
+} from "./resources/playlists.js";
+export type {
+  PlaylistChangeOptions,
+  PlaylistCreateOptions,
+  PlaylistDeleteDiffOperation,
+  PlaylistDeleteTracksOptions,
+  PlaylistDiffOperation,
+  PlaylistInsertDiffOperation,
+  PlaylistInsertDiffTrack,
+  PlaylistInsertTrackOptions,
+  PlaylistVisibility,
+} from "./resources/playlists.js";
+export type {
   RadioAccountStatusOptions,
   RadioStationId,
   RadioStationInfoOptions,
