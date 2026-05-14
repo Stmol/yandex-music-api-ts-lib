@@ -76,6 +76,58 @@ test("search.search serializes query parameters and parses the Search model", as
   assert.equal(result.hasResults, true);
 });
 
+test("search.search defaults page to zero when pageSize is provided", async () => {
+  const transport = new MockTransport({
+    body: {
+      result: {
+        text: "Muse",
+      },
+    },
+    headers: {},
+    status: 200,
+    statusText: "OK",
+    url: "https://api.music.yandex.net/search",
+  });
+
+  const resource = new SearchResource(transport);
+  await resource.search("Muse", {
+    language: "en",
+    pageSize: 1,
+    type: "track",
+  });
+
+  assert.deepEqual(transport.capturedRequest?.query, {
+    lang: "en",
+    nocorrect: undefined,
+    page: 0,
+    "page-size": 1,
+    "playlist-in-best": undefined,
+    text: "Muse",
+    type: "track",
+  });
+});
+
+test("search model accepts current pager payloads with results arrays", () => {
+  const result = Search.fromJSON({
+    text: "Muse",
+    tracks: {
+      total: 1,
+      perPage: 1,
+      page: 0,
+      results: [
+        {
+          id: 11,
+          title: "Uprising",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.hasResults, true);
+  assert.equal(result.tracks?.items?.[0] instanceof Track, true);
+  assert.equal(result.tracks?.items?.[0]?.title, "Uprising");
+});
+
 test("search.searchSuggest serializes the part parameter and parses suggestions", async () => {
   const transport = new MockTransport({
     body: {

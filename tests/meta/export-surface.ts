@@ -411,6 +411,7 @@ export const ROOT_RUNTIME_ONLY_EXPORTS = [
   "UnknownApiError",
   "YandexMusicClient",
   "YandexMusicError",
+  "createConsoleHttpLogger",
   "serializePlaylistDiff",
 ] as const;
 
@@ -433,6 +434,7 @@ export const ROOT_DECLARATION_ONLY_EXPORTS = [
   "ArtistTracksOptions",
   "ArtistsByIdsOptions",
   "BadRequestError",
+  "ConsoleHttpLoggerOptions",
   "CoverSize",
   "DeepReadonly",
   "DislikedTracksOptions",
@@ -442,13 +444,17 @@ export const ROOT_DECLARATION_ONLY_EXPORTS = [
   "FetchTransport",
   "FetchTransportOptions",
   "GenresListOptions",
+  "HttpErrorLogEvent",
   "HttpHeaderMap",
+  "HttpLogger",
   "HttpMethod",
   "HttpQueryParams",
   "HttpQueryValue",
   "HttpRequest",
+  "HttpRequestLogEvent",
   "HttpResponse",
   "HttpResponseBody",
+  "HttpResponseLogEvent",
   "HttpRetryPolicy",
   "HttpTransport",
   "JsonArray",
@@ -512,6 +518,7 @@ export const ROOT_DECLARATION_ONLY_EXPORTS = [
   "YandexMusicClient",
   "YandexMusicClientOptions",
   "YandexMusicError",
+  "createConsoleHttpLogger",
   "serializePlaylistDiff",
 ] as const;
 

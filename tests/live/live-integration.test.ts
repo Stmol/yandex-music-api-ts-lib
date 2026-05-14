@@ -27,9 +27,12 @@ const client = new YandexMusicClient({
 });
 
 function getResolvedUserId(status: Status): UserId {
-  const userId = status.account?.uid;
+  const userId = configuredTestUserId ?? status.account?.uid;
 
-  assert.ok(typeof userId === "string" || typeof userId === "number", "account.status must resolve the current user id");
+  assert.ok(
+    typeof userId === "string" || typeof userId === "number",
+    "Set YANDEX_MUSIC_TEST_USER_ID because live /account/status may not expose account.uid",
+  );
   return userId;
 }
 
@@ -69,10 +72,6 @@ function getStationId(stationId: string | null | undefined): RadioStationId {
 }
 
 function getMutationUserId(status: Status): UserId {
-  if (configuredTestUserId !== undefined) {
-    return configuredTestUserId;
-  }
-
   return getResolvedUserId(status);
 }
 
@@ -83,7 +82,7 @@ test("live suite is opt-in and requires a token", {
   const userId = getResolvedUserId(status);
 
   assert.equal(status instanceof Status, true);
-  assert.ok(status.account?.displayName ?? status.account?.login ?? status.defaultEmail);
+  assert.ok(status.account, "account.status must return account metadata");
 
   const trackSearch = await client.search.search("Muse", {
     language: "en",

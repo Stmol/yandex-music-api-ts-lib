@@ -34,7 +34,7 @@ export class SearchResource {
         text,
         type: options.type,
         nocorrect: options.nocorrect,
-        page: options.page,
+        page: options.page ?? (options.pageSize !== undefined ? 0 : undefined),
         "page-size": options.pageSize,
         "playlist-in-best": options.playlistInBest,
       },
