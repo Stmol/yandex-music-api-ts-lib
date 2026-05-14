@@ -17,12 +17,14 @@ import {
   LandingList,
   LyricsInfo,
   Major,
+  MusicHistoryItems,
   R128,
   SimilarTracks,
   Station,
   StationResult,
   StationTracksResult,
   Supplement,
+  Suggestions,
   TagResult,
   Track,
   TrackFullInfo,
@@ -182,6 +184,47 @@ test("Artist brief, tracks, albums, and similar parse nested models", () => {
   assert.ok(tracks.tracks?.[0] instanceof Track);
   assert.ok(albums.albums?.[0] instanceof Album);
   assert.ok(similar.artists?.[0] instanceof Artist);
+});
+
+test("Search suggestions parse best result and string suggestions", () => {
+  const suggestions = Suggestions.fromJSON({
+    best: {
+      type: "track",
+      result: {
+        id: 51,
+        title: "Track",
+      },
+    },
+    suggestions: ["track", "track remix"],
+  });
+
+  assert.ok(suggestions instanceof Suggestions);
+  assert.ok(suggestions.best?.result instanceof Track);
+  assert.deepEqual(suggestions.suggestions, ["track", "track remix"]);
+});
+
+test("MusicHistoryItems parses nested item ids and full models", () => {
+  const historyItems = MusicHistoryItems.fromJSON({
+    items: [
+      {
+        type: "track",
+        data: {
+          item_id: {
+            album_id: "31",
+            track_id: "51",
+          },
+          full_model: {
+            id: 51,
+            title: "Track",
+          },
+        },
+      },
+    ],
+  });
+
+  assert.ok(historyItems instanceof MusicHistoryItems);
+  assert.equal(historyItems.items?.[0]?.data?.itemId?.trackId, "51");
+  assert.ok(historyItems.items?.[0]?.data?.fullModel instanceof Track);
 });
 
 test("Landing, genre, feed, and radio read-only models normalize nested payloads", () => {

@@ -38,13 +38,23 @@ export type {
 export type {
   ArtistAlbumsOptions,
   ArtistBriefInfoOptions,
+  ArtistInfoOptions,
+  ArtistLinksOptions,
+  ArtistSafeDirectAlbumsOptions,
   ArtistSimilarOptions,
   ArtistsByIdsOptions,
+  ArtistTrackIdsOptions,
   ArtistTracksOptions,
 } from "./resources/artists.js";
 export type { GenresListOptions } from "./resources/genres.js";
-export type { MusicHistoryOptions } from "./resources/history.js";
 export type {
+  MusicHistoryItemsOptions,
+  MusicHistoryOptions,
+  MusicHistoryPlaylistId,
+  MusicHistoryTrackId,
+} from "./resources/history.js";
+export type {
+  FeedWizardIsPassedOptions,
   FeedOptions,
   LandingChartOptions,
   LandingListOptions,
@@ -68,4 +78,5 @@ export type {
   TrackSupplementOptions,
   TrackTrailerOptions,
 } from "./resources/tracks.js";
+export type { SearchOptions, SearchSuggestOptions, SearchType } from "./resources/search.js";
 export * from "./models/index.js";

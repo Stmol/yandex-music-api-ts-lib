@@ -5,6 +5,7 @@ import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/ty
 import { Status } from "../../src/models/account/Status.ts";
 import { Genre } from "../../src/models/genre/Genre.ts";
 import { MusicHistory } from "../../src/models/history/MusicHistory.ts";
+import { MusicHistoryItems } from "../../src/models/history/MusicHistoryItems.ts";
 import { Dashboard } from "../../src/models/radio/Dashboard.ts";
 import { Station } from "../../src/models/radio/Station.ts";
 import { StationResult } from "../../src/models/radio/StationResult.ts";
@@ -172,7 +173,7 @@ test("radio resource builds rotor paths and parses read-only radio models", asyn
   assert.ok(tracks.tracks?.[0] instanceof Track);
 });
 
-test("history.musicHistory builds the history endpoint and parses MusicHistory", async () => {
+test("history resource builds history endpoints and parses history models", async () => {
   const transport = new QueueTransport([
     {
       body: {
@@ -191,16 +192,107 @@ test("history.musicHistory builds the history endpoint and parses MusicHistory",
       statusText: "OK",
       url: "https://api.music.yandex.net/music-history",
     },
+    {
+      body: {
+        result: {
+          items: [
+            {
+              type: "track",
+              data: {
+                item_id: {
+                  album_id: "31",
+                  track_id: "11",
+                },
+                full_model: {
+                  id: 11,
+                  title: "Played",
+                },
+              },
+            },
+          ],
+        },
+      },
+      headers: {},
+      status: 200,
+      statusText: "OK",
+      url: "https://api.music.yandex.net/music-history/items",
+    },
   ]);
   const resource = new HistoryResource(transport);
   const history = await resource.musicHistory({ language: "en" });
+  const historyItems = await resource.musicHistoryItems({
+    albumIds: [31],
+    artistIds: [41],
+    playlistIds: [{ kind: "1001", uid: "501" }],
+    trackIds: [{ albumId: 31, trackId: 11 }],
+    waveSeeds: [["user:onyourwave"]],
+  });
 
   assert.equal(transport.capturedRequests[0]?.path, "/music-history");
   assert.deepEqual(transport.capturedRequests[0]?.query, {
     fullModelsCount: undefined,
     lang: "en",
   });
+  assert.equal(transport.capturedRequests[1]?.method, "POST");
+  assert.equal(transport.capturedRequests[1]?.path, "/music-history/items");
+  assert.deepEqual(transport.capturedRequests[1]?.headers, {
+    "Content-Type": "application/json",
+  });
+  const requestBody = transport.capturedRequests[1]?.body;
+
+  if (typeof requestBody !== "string") {
+    assert.fail("Expected musicHistoryItems request body to be a JSON string.");
+  }
+
+  assert.deepEqual(JSON.parse(requestBody), {
+    items: [
+      {
+        data: {
+          itemId: {
+            albumId: "31",
+            trackId: "11",
+          },
+        },
+        type: "track",
+      },
+      {
+        data: {
+          itemId: {
+            id: "31",
+          },
+        },
+        type: "album",
+      },
+      {
+        data: {
+          itemId: {
+            id: "41",
+          },
+        },
+        type: "artist",
+      },
+      {
+        data: {
+          itemId: {
+            kind: 1001,
+            uid: 501,
+          },
+        },
+        type: "playlist",
+      },
+      {
+        data: {
+          itemId: {
+            seeds: ["user:onyourwave"],
+          },
+        },
+        type: "wave",
+      },
+    ],
+  });
   assert.ok(history instanceof MusicHistory);
   assert.ok(history.lastTrack instanceof Track);
   assert.equal(history.generatedAt, "2026-05-13T10:00:00Z");
+  assert.ok(historyItems instanceof MusicHistoryItems);
+  assert.ok(historyItems.items?.[0]?.data?.fullModel instanceof Track);
 });

@@ -1,5 +1,6 @@
 import type { SupportedLanguage, HttpTransport } from "../http/types.ts";
 import { Search } from "../models/search/Search.ts";
+import { Suggestions } from "../models/search/Suggestions.ts";
 import { parseObjectResult } from "./parsing.ts";
 
 export type SearchType = "all" | "album" | "artist" | "playlist" | "track";
@@ -11,6 +12,10 @@ export interface SearchOptions {
   readonly pageSize?: number;
   readonly playlistInBest?: boolean;
   readonly type?: SearchType;
+}
+
+export interface SearchSuggestOptions {
+  readonly language?: SupportedLanguage;
 }
 
 export class SearchResource {
@@ -35,5 +40,17 @@ export class SearchResource {
       },
     });
     return Search.fromJSON(parseObjectResult(response));
+  }
+
+  async searchSuggest(part: string, options: SearchSuggestOptions = {}): Promise<Suggestions> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: "/search/suggest",
+      query: {
+        lang: options.language,
+        part,
+      },
+    });
+    return Suggestions.fromJSON(parseObjectResult(response));
   }
 }
