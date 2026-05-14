@@ -6,7 +6,7 @@ Zero-dependency TypeScript package for the Yandex Music API.
 
 ## Status
 
-This repository is ready for the public `v0.2` release.
+This repository is ready for public release.
 
 Current scope:
 
@@ -18,7 +18,7 @@ Current scope:
 - zero-runtime-dependency package contract checks
 - Node test-build pipeline
 - runtime smoke tests for Node.js, Bun, and Deno
-- release validation workflow for typecheck, Node tests, Bun smoke tests, Deno smoke tests, and package dry-run on pushed version tags
+- release validation workflow for typecheck, Node tests, Bun smoke tests, Deno smoke tests, and package dry-run on pushed release tags
 
 Beta scope:
 
@@ -53,15 +53,15 @@ Current project state:
 - [x] Zero runtime dependencies
 - [x] `fetch` transport with OAuth support
 - [x] Read-only resources for account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history
-- [x] `v0.3 beta` read-only parity helpers for search suggestions, music history items, artist metadata, and feed wizard status
+- [x] Read-only parity helpers for search suggestions, music history items, artist metadata, and feed wizard status
 - [x] Node.js, Bun, and Deno smoke tests
 - [x] Package contract tests
 
-Planned next releases:
+Planned next milestones:
 
-- [ ] `v0.4 beta`: add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
-- [ ] `v0.5 beta`: start write-heavy flows as separate resources for likes/dislikes, playlist mutations, queue updates, and radio feedback
-- [ ] `v1.0`: freeze the stable public API, compatibility policy, changelog, and release process
+- [ ] Add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
+- [ ] Start write-heavy flows as separate resources for likes/dislikes, playlist mutations, queue updates, and radio feedback
+- [ ] Freeze the stable public API, compatibility policy, changelog, and release process
 
 ## Installation
 
@@ -134,7 +134,7 @@ Many thanks to MarshalX for that work.
 
 ## Release Validation
 
-The GitHub Actions workflow runs only when a new version tag matching `v*` is pushed.
+The GitHub Actions workflow runs only when a new release tag is pushed.
 It validates typecheck, Node tests, Bun smoke tests, Deno smoke tests, and `npm pack --dry-run`.
 
 ## Development
