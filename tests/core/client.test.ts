@@ -10,7 +10,7 @@ class RecordingTransport implements HttpTransport {
   async request(request: HttpRequest): Promise<HttpResponse> {
     this.requests.push(request);
 
-    if (request.path === "/users/account/status") {
+    if (request.path === "/account/status") {
       return {
         body: {
           result: {
@@ -26,7 +26,7 @@ class RecordingTransport implements HttpTransport {
         headers: {},
         status: 200,
         statusText: "OK",
-        url: "https://api.music.yandex.net/users/account/status",
+        url: "https://api.music.yandex.net/account/status",
       };
     }
 
@@ -113,7 +113,7 @@ test("YandexMusicClient uses FetchTransport by default and remains immutable", a
   assert.equal(client.search, client.search);
   assert.equal(client.tracks, client.tracks);
   assert.equal(capturedRequests.length, 1);
-  assert.equal(capturedRequests[0]?.url, "https://api.music.yandex.net/users/account/status?lang=en");
+  assert.equal(capturedRequests[0]?.url, "https://api.music.yandex.net/account/status?lang=en");
   assert.equal(capturedRequests[0]?.headers.get("authorization"), "OAuth token-123");
   assert.equal(status.account?.displayName, "Listener");
   assert.equal(status.hasActiveSubscription, true);
@@ -131,7 +131,7 @@ test("YandexMusicClient wires all resources through the provided transport", asy
   const liked = await client.likes.addAlbums([1], { userId: 501 });
 
   assert.equal(transport.requests.length, 3);
-  assert.equal(transport.requests[0]?.path, "/users/account/status");
+  assert.equal(transport.requests[0]?.path, "/account/status");
   assert.equal(transport.requests[1]?.path, "/search");
   assert.equal(transport.requests[2]?.path, "/users/501/likes/albums/add-multiple");
   assert.deepEqual(transport.requests[0]?.query, {

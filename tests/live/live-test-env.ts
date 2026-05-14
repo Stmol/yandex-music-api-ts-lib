@@ -32,6 +32,7 @@ export function requiredEnvSummary(): string {
   return [
     "Set env YANDEX_MUSIC_LIVE=1 npm run test:live",
     "Set YANDEX_MUSIC_OAUTH_TOKEN=<oauth token> for authenticated live checks",
-    "Optionally set YANDEX_MUSIC_LIVE_MUTATION=1 and YANDEX_MUSIC_TEST_USER_ID=<uid> for mutation smoke",
+    "Optionally set YANDEX_MUSIC_TEST_USER_ID=<uid> because account.status may not expose uid in live API responses",
+    "Optionally set YANDEX_MUSIC_LIVE_MUTATION=1 for mutation smoke",
   ].join(". ");
 }

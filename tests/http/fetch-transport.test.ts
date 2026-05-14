@@ -27,13 +27,13 @@ test("FetchTransport applies default headers and injects the OAuth token", async
     headers: {
       "X-Test-Header": "yes",
     },
-    path: "/users/account/status",
+    path: "/account/status",
     query: {
       lang: "en",
     },
   });
 
-  assert.equal(capturedUrl, "https://api.music.yandex.net/users/account/status?lang=en");
+  assert.equal(capturedUrl, "https://api.music.yandex.net/account/status?lang=en");
   assert.equal(capturedHeaders?.get("accept"), "application/json");
   assert.equal(capturedHeaders?.get("authorization"), "OAuth token-123");
   assert.equal(capturedHeaders?.get("x-test-header"), "yes");
@@ -378,8 +378,8 @@ test("FetchTransport requires exactly one of path or url at runtime", async () =
   await assert.rejects(
     () =>
       transport.request({
-        path: "/users/account/status",
-        url: "https://api.music.yandex.net/users/account/status",
+        path: "/account/status",
+        url: "https://api.music.yandex.net/account/status",
       } as Parameters<typeof transport.request>[0]),
     {
       message: "HttpRequest must include exactly one of path or url.",

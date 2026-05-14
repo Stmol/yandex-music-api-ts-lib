@@ -47,8 +47,14 @@ function parsePager<TItem>(
     ...normalized,
   };
 
-  if (Array.isArray(normalized.items)) {
-    pagerShape.items = normalized.items.map((entry, index) =>
+  const rawItems = Array.isArray(normalized.items)
+    ? normalized.items
+    : Array.isArray(normalized.results)
+      ? normalized.results
+      : undefined;
+
+  if (rawItems !== undefined) {
+    pagerShape.items = rawItems.map((entry, index) =>
       parseItem(expectJsonObject(entry, `$.pager.items[${index}]`)));
   }
 

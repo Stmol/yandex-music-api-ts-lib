@@ -36,14 +36,14 @@ test("account.status builds the expected request and parses Status", async () =>
     headers: {},
     status: 200,
     statusText: "OK",
-    url: "https://api.music.yandex.net/users/account/status",
+    url: "https://api.music.yandex.net/account/status",
   });
 
   const resource = new AccountResource(transport);
   const status = await resource.status({ language: "en" });
 
   assert.equal(transport.capturedRequest?.method, "GET");
-  assert.equal(transport.capturedRequest?.path, "/users/account/status");
+  assert.equal(transport.capturedRequest?.path, "/account/status");
   assert.deepEqual(transport.capturedRequest?.query, {
     lang: "en",
   });
@@ -59,7 +59,7 @@ test("account.status rejects malformed object payloads", async () => {
     headers: {},
     status: 200,
     statusText: "OK",
-    url: "https://api.music.yandex.net/users/account/status",
+    url: "https://api.music.yandex.net/account/status",
   });
 
   const resource = new AccountResource(transport);

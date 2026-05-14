@@ -16,11 +16,12 @@ export class AccountResource {
   async status(options: AccountStatusOptions = {}): Promise<Status> {
     const response = await this.transport.request({
       method: "GET",
-      path: "/users/account/status",
+      path: "/account/status",
       query: {
         lang: options.language,
       },
     });
+
     return Status.fromJSON(parseObjectResult(response));
   }
 }

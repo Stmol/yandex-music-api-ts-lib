@@ -32,7 +32,7 @@ class SmokeTransport implements HttpTransport {
       headers: {},
       status: 200,
       statusText: "OK",
-      url: "https://api.music.yandex.net/users/account/status",
+      url: "https://api.music.yandex.net/account/status",
     };
   }
 }
@@ -59,7 +59,7 @@ test("Node.js can import the package entrypoints and use a custom transport", as
   assert.equal(track.title, "Runtime Smoke");
   assert.equal(diff.toJSON(), "[{\"from\":0,\"op\":\"delete\",\"to\":1}]");
   assert.equal(transport.requests.length, 1);
-  assert.equal(transport.requests[0]?.path, "/users/account/status");
+  assert.equal(transport.requests[0]?.path, "/account/status");
   assert.deepEqual(transport.requests[0]?.query, {
     lang: "en",
   });

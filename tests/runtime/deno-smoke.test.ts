@@ -43,7 +43,7 @@ class SmokeTransport implements HttpTransport {
       headers: {},
       status: 200,
       statusText: "OK",
-      url: "https://api.music.yandex.net/users/account/status",
+      url: "https://api.music.yandex.net/account/status",
     };
   }
 }
@@ -65,6 +65,6 @@ runtime.Deno?.test("Deno can import the package entrypoints and use a custom tra
   assertEqual(track.title, "Runtime Smoke", "models subpath import");
   assertEqual(diff.toJSON(), "[{\"from\":0,\"op\":\"delete\",\"to\":1}]", "playlist diff builder export");
   assertEqual(transport.requests.length, 1, "request count");
-  assertEqual(transport.requests[0]?.path, "/users/account/status", "request path");
+  assertEqual(transport.requests[0]?.path, "/account/status", "request path");
   assertEqual(transport.requests[0]?.query?.lang, "en", "request language");
 });
