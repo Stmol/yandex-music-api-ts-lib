@@ -4,6 +4,14 @@ export type { ArtistId, CoverSize, PlaylistKind, TrackId, UserId } from "./core/
 export type { DeepReadonly, JsonArray, JsonObject, JsonPrimitive, JsonValue } from "./core/json.js";
 export { FetchTransport } from "./http/fetch-transport.js";
 export type { FetchTransportOptions } from "./http/fetch-transport.js";
+export { createConsoleHttpLogger } from "./http/logger.js";
+export type {
+  ConsoleHttpLoggerOptions,
+  HttpErrorLogEvent,
+  HttpLogger,
+  HttpRequestLogEvent,
+  HttpResponseLogEvent,
+} from "./http/logger.js";
 export {
   AbortError,
   ApiSchemaError,

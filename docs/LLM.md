@@ -44,6 +44,8 @@ import {
   UnknownApiError,
   YandexMusicClient,
   YandexMusicError,
+  createConsoleHttpLogger,
+  type HttpLogger,
   type HttpRequest,
   type HttpResponse,
   type HttpTransport,
@@ -57,7 +59,9 @@ Constructor options:
 - `defaultHeaders` - headers added to every request.
 - `defaultTimeoutMs` - default request timeout. Library default: `10_000`.
 - `defaultRetry` - retry policy for the built-in fetch transport.
+- `enableHttpLogging` - opt-in console-based HTTP logging for the built-in fetch transport. Default: `false`.
 - `fetch` - custom fetch-compatible function. Use this when the host runtime provides `fetch` through a wrapper.
+- `httpLogger` - custom `HttpLogger`; when set, it receives attempt-level request/response/error events from the built-in fetch transport even if `enableHttpLogging` is `false`.
 - `transport` - full custom `HttpTransport`; when set, built-in fetch behavior is bypassed entirely.
 
 ## Transport Contract
@@ -84,8 +88,26 @@ Built-in `FetchTransport` behavior:
 - retries only on `408`, `425`, `429`, `500`, `502`, `503`, `504`
 - default retry values: `maxRetries=2`, `baseDelayMs=250`, `maxDelayMs=2000`
 - respects `Retry-After` when present
+- keeps HTTP logging disabled by default
+- can emit attempt-level log events through `enableHttpLogging` or a custom `httpLogger`
 - does not retry malformed JSON responses
 - does not retry aborts or non-idempotent methods unless the caller changes the retry policy
+
+Logging example:
+
+```ts
+const client = new YandexMusicClient({
+  enableHttpLogging: true,
+  oauthToken: process.env.YANDEX_MUSIC_TOKEN,
+});
+
+const logger: HttpLogger = createConsoleHttpLogger();
+
+const clientWithCustomLogger = new YandexMusicClient({
+  httpLogger: logger,
+  oauthToken: process.env.YANDEX_MUSIC_TOKEN,
+});
+```
 
 Custom transport shape:
 

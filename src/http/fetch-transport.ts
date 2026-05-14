@@ -9,6 +9,11 @@ import {
   YANDEX_MUSIC_API_BASE_URL,
 } from "./constants.ts";
 import { AbortError, NetworkError, TimeoutError, UnknownApiError } from "../core/errors.ts";
+import {
+  createConsoleHttpLogger,
+  redactSensitiveHeaders,
+} from "./logger.ts";
+import type { HttpLogger } from "./logger.ts";
 import type {
   FetchLike,
   HttpHeaderMap,
@@ -24,7 +29,9 @@ export interface FetchTransportOptions {
   readonly defaultHeaders?: HttpHeaderMap;
   readonly defaultRetry?: HttpRetryPolicy;
   readonly defaultTimeoutMs?: number;
+  readonly enableHttpLogging?: boolean;
   readonly fetch?: FetchLike;
+  readonly httpLogger?: HttpLogger;
   readonly oauthToken?: string;
 }
 
@@ -272,12 +279,32 @@ function toHeaderMap(headers: Headers): HttpHeaderMap {
   );
 }
 
+function emitLog(callback: (() => void) | undefined): void {
+  if (!callback) {
+    return;
+  }
+
+  try {
+    callback();
+  } catch {
+    // Logger failures must never affect transport behavior.
+  }
+}
+
+let requestSequence = 0;
+
+function createRequestId(): string {
+  requestSequence += 1;
+  return `http-${requestSequence.toString(36)}`;
+}
+
 export class FetchTransport implements HttpTransport {
   readonly #baseUrl: string;
   readonly #defaultHeaders: HttpHeaderMap;
   readonly #defaultRetry: HttpRetryPolicy | undefined;
   readonly #defaultTimeoutMs: number;
   readonly #fetch: FetchLike;
+  readonly #httpLogger: HttpLogger | undefined;
   readonly #oauthToken: string | undefined;
 
   constructor(options: FetchTransportOptions = {}) {
@@ -286,6 +313,8 @@ export class FetchTransport implements HttpTransport {
     this.#defaultRetry = options.defaultRetry;
     this.#defaultTimeoutMs = options.defaultTimeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.#fetch = options.fetch ?? fetch;
+    this.#httpLogger = options.httpLogger
+      ?? (options.enableHttpLogging ? createConsoleHttpLogger() : undefined);
     this.#oauthToken = options.oauthToken;
   }
 
@@ -311,10 +340,27 @@ export class FetchTransport implements HttpTransport {
       setHeader(headers, "Authorization", `OAuth ${oauthToken}`);
     }
 
+    const requestId = createRequestId();
+    const loggedHeaders = redactSensitiveHeaders(toHeaderMap(headers));
+    const hasRequestBody = request.body !== undefined && request.body !== null;
+
     for (let attempt = 0; ; attempt += 1) {
+      const attemptNumber = attempt + 1;
+      const startedAt = new Date().toISOString();
+      const startedAtMs = Date.now();
       const abort = createAbortSignal(timeoutMs, request.signal);
 
       try {
+        emitLog(() => this.#httpLogger?.onRequest?.({
+          attempt: attemptNumber,
+          hasRequestBody,
+          headers: loggedHeaders,
+          method,
+          requestId,
+          startedAt,
+          url: url.toString(),
+        }));
+
         const init: RequestInit = {
           headers,
           method,
@@ -326,8 +372,24 @@ export class FetchTransport implements HttpTransport {
         }
 
         const response = await this.#fetch(url, init);
+        const willRetry = shouldRetryResponse(method, response, retryPolicy, attempt);
 
-        if (shouldRetryResponse(method, response, retryPolicy, attempt)) {
+        emitLog(() => this.#httpLogger?.onResponse?.({
+          attempt: attemptNumber,
+          durationMs: Date.now() - startedAtMs,
+          hasRequestBody,
+          hasResponseBody: response.status !== 204 && response.status !== 205 && response.body !== null,
+          headers: redactSensitiveHeaders(toHeaderMap(response.headers)),
+          method,
+          requestId,
+          startedAt,
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          willRetry,
+        }));
+
+        if (willRetry) {
           await discardResponseBody(response);
           await waitForRetry(getRetryDelayMs(attempt, retryPolicy, response), request.signal);
           continue;
@@ -344,7 +406,23 @@ export class FetchTransport implements HttpTransport {
         };
       } catch (cause) {
         if (abort.didTimeout()) {
-          if (shouldRetryMethod(method, retryPolicy) && shouldRetryAttempt(attempt, retryPolicy)) {
+          const willRetry = shouldRetryMethod(method, retryPolicy)
+            && shouldRetryAttempt(attempt, retryPolicy);
+
+          emitLog(() => this.#httpLogger?.onError?.({
+            attempt: attemptNumber,
+            durationMs: Date.now() - startedAtMs,
+            error: cause,
+            hasRequestBody,
+            headers: loggedHeaders,
+            method,
+            requestId,
+            startedAt,
+            url: url.toString(),
+            willRetry,
+          }));
+
+          if (willRetry) {
             await waitForRetry(getRetryDelayMs(attempt, retryPolicy, undefined), request.signal);
             continue;
           }
@@ -356,6 +434,19 @@ export class FetchTransport implements HttpTransport {
         }
 
         if (abort.wasAbortedExternally() || (request.signal?.aborted && isAbortErrorLike(cause))) {
+          emitLog(() => this.#httpLogger?.onError?.({
+            attempt: attemptNumber,
+            durationMs: Date.now() - startedAtMs,
+            error: cause,
+            hasRequestBody,
+            headers: loggedHeaders,
+            method,
+            requestId,
+            startedAt,
+            url: url.toString(),
+            willRetry: false,
+          }));
+
           throw new AbortError("Yandex Music API request was aborted.", {
             cause,
             url: url.toString(),
@@ -363,10 +454,39 @@ export class FetchTransport implements HttpTransport {
         }
 
         if (cause instanceof UnknownApiError) {
+          emitLog(() => this.#httpLogger?.onError?.({
+            attempt: attemptNumber,
+            durationMs: Date.now() - startedAtMs,
+            error: cause,
+            hasRequestBody,
+            headers: loggedHeaders,
+            method,
+            requestId,
+            startedAt,
+            url: url.toString(),
+            willRetry: false,
+          }));
+
           throw cause;
         }
 
-        if (shouldRetryMethod(method, retryPolicy) && shouldRetryAttempt(attempt, retryPolicy)) {
+        const willRetry = shouldRetryMethod(method, retryPolicy)
+          && shouldRetryAttempt(attempt, retryPolicy);
+
+        emitLog(() => this.#httpLogger?.onError?.({
+          attempt: attemptNumber,
+          durationMs: Date.now() - startedAtMs,
+          error: cause,
+          hasRequestBody,
+          headers: loggedHeaders,
+          method,
+          requestId,
+          startedAt,
+          url: url.toString(),
+          willRetry,
+        }));
+
+        if (willRetry) {
           await waitForRetry(getRetryDelayMs(attempt, retryPolicy, undefined), request.signal);
           continue;
         }

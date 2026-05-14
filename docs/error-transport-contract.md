@@ -31,6 +31,7 @@ The built-in transport:
 - sends `Accept: application/json` by default
 - merges `defaultHeaders` first, then per-request `headers`
 - injects `Authorization: OAuth <token>` only when a token is available and the request did not already set `authorization`
+- keeps HTTP logging disabled by default unless `enableHttpLogging` or `httpLogger` is set
 
 Token sources, in precedence order:
 
@@ -69,6 +70,17 @@ Behavior:
 - network failures may retry only when the method is retriable
 - malformed JSON responses are not retried
 - non-idempotent requests are not retried by default
+
+## Logging
+
+When HTTP logging is enabled for `FetchTransport`:
+
+- logging is attempt-level, not request-level summary only
+- `onRequest` fires before every network attempt
+- `onResponse` fires for every HTTP response, including responses that will be retried
+- `onError` fires for network, timeout, abort, and parsing failures
+- sensitive headers such as `authorization` are redacted before they are passed to the logger
+- the default console logger does not print request or response bodies
 
 ## Response Parsing
 

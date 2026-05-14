@@ -28,7 +28,11 @@ function resolveTransport(options: YandexMusicClientOptions): HttpTransport {
     ...(options.defaultTimeoutMs !== undefined
       ? { defaultTimeoutMs: options.defaultTimeoutMs }
       : {}),
+    ...(options.enableHttpLogging !== undefined
+      ? { enableHttpLogging: options.enableHttpLogging }
+      : {}),
     ...(options.fetch !== undefined ? { fetch: options.fetch } : {}),
+    ...(options.httpLogger !== undefined ? { httpLogger: options.httpLogger } : {}),
     ...(options.oauthToken !== undefined ? { oauthToken: options.oauthToken } : {}),
   };
 

@@ -217,6 +217,43 @@ const likedTracks = await client.likes.likedTracks(501);
 const recommendations = await client.playlists.recommendations(501, playlist.kind ?? 100);
 ```
 
+HTTP logging stays disabled by default. Enable it explicitly when you need request and response tracing:
+
+```ts
+import {
+  YandexMusicClient,
+  createConsoleHttpLogger,
+  type HttpLogger,
+} from "ya-music-api-ts-lib";
+
+const clientWithConsoleLogging = new YandexMusicClient({
+  enableHttpLogging: true,
+  oauthToken: process.env.YANDEX_MUSIC_TOKEN,
+});
+
+const customLogger: HttpLogger = {
+  onError(event) {
+    console.error("custom http error", event);
+  },
+  onRequest(event) {
+    console.info("custom http request", event);
+  },
+  onResponse(event) {
+    console.info("custom http response", event);
+  },
+};
+
+const clientWithCustomLogging = new YandexMusicClient({
+  httpLogger: customLogger,
+  oauthToken: process.env.YANDEX_MUSIC_TOKEN,
+});
+
+const clientWithFactoryLogger = new YandexMusicClient({
+  httpLogger: createConsoleHttpLogger(),
+  oauthToken: process.env.YANDEX_MUSIC_TOKEN,
+});
+```
+
 You can provide a custom transport implementation when you need to control authentication, retries, or the runtime fetch integration yourself.
 
 ```ts
@@ -262,7 +299,7 @@ await client.account.status();
 | **Radio** | `accountStatus`, `stationsDashboard`, `stationsList`, `stationInfo`, `stationTracks` | — |
 | **History** | `musicHistory`, `musicHistoryItems` | — |
 
-**Transport:** `fetch`-based with OAuth header injection, configurable retry policy, 10s timeout, `Retry-After` support, `AbortSignal` support, and custom `HttpTransport` injection for testing.
+**Transport:** `fetch`-based with OAuth header injection, configurable retry policy, 10s timeout, `Retry-After` support, `AbortSignal` support, opt-in HTTP attempt logging, and custom `HttpTransport` injection for testing.
 
 **Total:** about 60 methods across 11 resource groups.
 

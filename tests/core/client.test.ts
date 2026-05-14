@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { YandexMusicClient } from "../../src/client.ts";
+import type {
+  HttpErrorLogEvent,
+  HttpLogger,
+  HttpRequestLogEvent,
+  HttpResponseLogEvent,
+} from "../../src/http/logger.ts";
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/types.ts";
 
 class RecordingTransport implements HttpTransport {
@@ -66,6 +72,24 @@ class RecordingTransport implements HttpTransport {
     }
 
     throw new Error(`Unexpected request path: ${request.path ?? "<missing>"}`);
+  }
+}
+
+class RecordingHttpLogger implements HttpLogger {
+  readonly errors: HttpErrorLogEvent[] = [];
+  readonly requests: HttpRequestLogEvent[] = [];
+  readonly responses: HttpResponseLogEvent[] = [];
+
+  onError(event: HttpErrorLogEvent): void {
+    this.errors.push(event);
+  }
+
+  onRequest(event: HttpRequestLogEvent): void {
+    this.requests.push(event);
+  }
+
+  onResponse(event: HttpResponseLogEvent): void {
+    this.responses.push(event);
   }
 }
 
@@ -149,4 +173,60 @@ test("YandexMusicClient wires all resources through the provided transport", asy
   assert.equal(status.hasActiveSubscription, true);
   assert.equal(search.tracks?.items?.length, 1);
   assert.equal(liked, true);
+});
+
+test("YandexMusicClient passes a custom HTTP logger into the built-in transport", async () => {
+  const logger = new RecordingHttpLogger();
+  const client = new YandexMusicClient({
+    enableHttpLogging: false,
+    fetch: async () =>
+      new Response(
+        JSON.stringify({
+          result: {
+            account: {
+              display_name: "Listener",
+              uid: 501,
+            },
+            plus: {
+              has_plus: true,
+            },
+          },
+        }),
+        {
+          headers: {
+            "content-type": "application/json",
+          },
+          status: 200,
+          statusText: "OK",
+        },
+      ),
+    httpLogger: logger,
+    oauthToken: "token-123",
+  });
+
+  const status = await client.account.status({ language: "en" });
+
+  assert.equal(status.account?.displayName, "Listener");
+  assert.equal(logger.requests.length, 1);
+  assert.equal(logger.responses.length, 1);
+  assert.equal(logger.errors.length, 0);
+  assert.equal(logger.requests[0]?.headers.authorization, "[REDACTED]");
+});
+
+test("YandexMusicClient does not wrap a custom transport with HTTP logging", async () => {
+  const logger = new RecordingHttpLogger();
+  const transport = new RecordingTransport();
+  const client = new YandexMusicClient({
+    enableHttpLogging: true,
+    httpLogger: logger,
+    transport,
+  });
+
+  const status = await client.account.status({ language: "en" });
+
+  assert.equal(status.hasActiveSubscription, true);
+  assert.equal(transport.requests.length, 1);
+  assert.equal(logger.requests.length, 0);
+  assert.equal(logger.responses.length, 0);
+  assert.equal(logger.errors.length, 0);
 });
