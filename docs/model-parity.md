@@ -2,7 +2,7 @@
 
 Reference: `MarshalX/yandex-music-api/yandex_music`.
 
-This report intentionally tracks read-only model coverage only. Write-heavy flows, device auth, and Ynison websocket clients are outside this library milestone.
+This report intentionally tracks read-only model coverage only. Resource endpoint coverage and write-method coverage are tracked in README.md and docs/LLM.md instead.
 
 | Group | Upstream Files | Local Files | v0.4 Status |
 | --- | ---: | ---: | --- |
@@ -30,9 +30,10 @@ This report intentionally tracks read-only model coverage only. Write-heavy flow
 | track | 15 | 16 | covered-or-expanded |
 | wave | 5 | 5 | covered-or-expanded |
 
-## v0.4 Exclusions
+## Report Exclusions
 
-- No write-heavy resources.
+- No resource endpoint coverage.
+- No write-method coverage, including the v0.5 playlists and likes/dislikes write subset.
 - No device auth.
 - No Ynison websocket clients.
 

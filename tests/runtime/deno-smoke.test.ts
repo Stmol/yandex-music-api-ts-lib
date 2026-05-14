@@ -1,4 +1,11 @@
-import { Status, YandexMusicClient, type HttpRequest, type HttpResponse, type HttpTransport } from "../../src/index.ts";
+import {
+  PlaylistDiffBuilder,
+  Status,
+  YandexMusicClient,
+  type HttpRequest,
+  type HttpResponse,
+  type HttpTransport,
+} from "../../src/index.ts";
 import { TrackShort } from "../../src/models/index.ts";
 
 type TestRunner = (name: string, fn: () => Promise<void> | void) => void;
@@ -46,6 +53,7 @@ runtime.Deno?.test("Deno can import the package entrypoints and use a custom tra
   const client = new YandexMusicClient({ transport });
 
   const status = await client.account.status({ language: "en" });
+  const diff = new PlaylistDiffBuilder().delete(0, 1);
   const track = TrackShort.fromJSON({
     id: "track-1",
     title: "Runtime Smoke",
@@ -55,6 +63,7 @@ runtime.Deno?.test("Deno can import the package entrypoints and use a custom tra
   assertEqual(status.account?.displayName, "Deno Listener", "account display name");
   assertEqual(status.hasActiveSubscription, true, "subscription flag");
   assertEqual(track.title, "Runtime Smoke", "models subpath import");
+  assertEqual(diff.toJSON(), "[{\"from\":0,\"op\":\"delete\",\"to\":1}]", "playlist diff builder export");
   assertEqual(transport.requests.length, 1, "request count");
   assertEqual(transport.requests[0]?.path, "/users/account/status", "request path");
   assertEqual(transport.requests[0]?.query?.lang, "en", "request language");

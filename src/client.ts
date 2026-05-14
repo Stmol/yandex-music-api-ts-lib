@@ -8,6 +8,7 @@ import { ArtistsResource } from "./resources/artists.ts";
 import { GenresResource } from "./resources/genres.ts";
 import { HistoryResource } from "./resources/history.ts";
 import { LandingResource } from "./resources/landing.ts";
+import { LikesResource } from "./resources/likes.ts";
 import { PlaylistsResource } from "./resources/playlists.ts";
 import { RadioResource } from "./resources/radio.ts";
 import { SearchResource } from "./resources/search.ts";
@@ -41,6 +42,7 @@ export class YandexMusicClient {
   readonly genres: GenresResource;
   readonly history: HistoryResource;
   readonly landing: LandingResource;
+  readonly likes: LikesResource;
   readonly playlists: PlaylistsResource;
   readonly radio: RadioResource;
   readonly search: SearchResource;
@@ -55,6 +57,7 @@ export class YandexMusicClient {
     this.genres = new GenresResource(transport);
     this.history = new HistoryResource(transport);
     this.landing = new LandingResource(transport);
+    this.likes = new LikesResource(transport);
     this.playlists = new PlaylistsResource(transport);
     this.radio = new RadioResource(transport);
     this.search = new SearchResource(transport);

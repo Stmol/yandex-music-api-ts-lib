@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { Status, YandexMusicClient, type HttpRequest, type HttpResponse, type HttpTransport } from "../../src/index.ts";
+import {
+  PlaylistDiffBuilder,
+  Status,
+  YandexMusicClient,
+  type HttpRequest,
+  type HttpResponse,
+  type HttpTransport,
+} from "../../src/index.ts";
 import { Clip, Concert, Label, Metatag, TrackShort, Wave } from "../../src/models/index.ts";
 
 class SmokeTransport implements HttpTransport {
@@ -35,6 +42,7 @@ test("Node.js can import the package entrypoints and use a custom transport", as
   const client = new YandexMusicClient({ transport });
 
   const status = await client.account.status({ language: "en" });
+  const diff = new PlaylistDiffBuilder().delete(0, 1);
   const track = TrackShort.fromJSON({
     id: "track-1",
     title: "Runtime Smoke",
@@ -49,6 +57,7 @@ test("Node.js can import the package entrypoints and use a custom transport", as
   assert.equal(status.account?.displayName, "Node Listener");
   assert.equal(status.hasActiveSubscription, true);
   assert.equal(track.title, "Runtime Smoke");
+  assert.equal(diff.toJSON(), "[{\"from\":0,\"op\":\"delete\",\"to\":1}]");
   assert.equal(transport.requests.length, 1);
   assert.equal(transport.requests[0]?.path, "/users/account/status");
   assert.deepEqual(transport.requests[0]?.query, {
