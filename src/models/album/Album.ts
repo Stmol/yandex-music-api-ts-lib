@@ -76,7 +76,9 @@ export class Album {
           return [];
         }
 
-        return volume.map((entry, trackIndex) =>
+        const volumeEntries = volume as readonly JsonValue[];
+
+        return volumeEntries.map((entry, trackIndex) =>
           Track.fromJSON(parseVolumeTrack(entry, `$.volumes[${volumeIndex}][${trackIndex}]`)));
       });
     }

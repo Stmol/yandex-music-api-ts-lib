@@ -19,6 +19,6 @@ export class Deprecation {
     this: new (shape: DeprecationShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as DeprecationShape);
+    return new this(normalizeObject(json));
   }
 }

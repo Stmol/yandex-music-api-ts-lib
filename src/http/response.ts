@@ -113,7 +113,11 @@ export function parseYandexApiResponse<TValue>(response: HttpResponse): TValue {
     }
 
     const message =
-      body === null ? response.statusText || "Yandex Music API request failed." : String(body);
+      body === null
+        ? response.statusText || "Yandex Music API request failed."
+        : typeof body === "string"
+          ? body
+          : JSON.stringify(body);
 
     if (response.status === 400) {
       throw new BadRequestError(message, {

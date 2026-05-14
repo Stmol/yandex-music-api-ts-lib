@@ -10,7 +10,7 @@ test("FetchTransport applies default headers and injects the OAuth token", async
 
   const transport = new FetchTransport({
     fetch: async (input, init) => {
-      capturedUrl = String(input);
+      capturedUrl = input instanceof Request ? input.url : String(input);
       capturedHeaders = new Headers(init?.headers);
 
       return new Response(JSON.stringify({ result: { ok: true } }), {
@@ -52,7 +52,11 @@ test("FetchTransport throws TimeoutError when the request exceeds the timeout", 
         init?.signal?.addEventListener(
           "abort",
           () => {
-            reject(init.signal?.reason ?? new Error("aborted"));
+            reject(
+              init?.signal?.reason instanceof Error
+                ? init.signal.reason
+                : new Error("aborted"),
+            );
           },
           { once: true },
         );
@@ -193,7 +197,11 @@ test("FetchTransport maps external aborts to AbortError without retrying", async
         init?.signal?.addEventListener(
           "abort",
           () => {
-            reject(init.signal?.reason ?? new DOMException("Aborted", "AbortError"));
+            reject(
+              init?.signal?.reason instanceof Error
+                ? init.signal.reason
+                : new DOMException("Aborted", "AbortError"),
+            );
           },
           { once: true },
         );

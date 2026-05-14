@@ -27,6 +27,6 @@ export class MetaData {
     this: new (shape: MetaDataShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as MetaDataShape);
+    return new this(normalizeObject(json));
   }
 }

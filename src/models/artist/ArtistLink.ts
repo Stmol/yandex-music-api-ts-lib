@@ -23,6 +23,6 @@ export class ArtistLink {
     this: new (shape: ArtistLinkShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as ArtistLinkShape);
+    return new this(normalizeObject(json));
   }
 }

@@ -49,7 +49,7 @@ export class Queue {
       return this.current;
     }
 
-    if (!Array.isArray(this.tracks) || typeof this.currentIndex !== "number") {
+    if (this.tracks === undefined || typeof this.currentIndex !== "number") {
       return null;
     }
 

@@ -25,7 +25,7 @@ export class Pager<TItem = unknown> {
     this: new (shape: PagerShape<TItem>) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as PagerShape<TItem>);
+    return new this(normalizeObject(json));
   }
 
   get hasNextPage(): boolean {

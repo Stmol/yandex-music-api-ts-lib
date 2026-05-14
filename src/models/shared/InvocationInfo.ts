@@ -21,6 +21,6 @@ export class InvocationInfo {
     this: new (shape: InvocationInfoShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as InvocationInfoShape);
+    return new this(normalizeObject(json));
   }
 }

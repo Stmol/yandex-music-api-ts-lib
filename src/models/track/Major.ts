@@ -19,6 +19,6 @@ export class Major {
     this: new (shape: MajorShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as MajorShape);
+    return new this(normalizeObject(json));
   }
 }

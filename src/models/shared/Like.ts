@@ -25,6 +25,6 @@ export class Like {
     this: new (shape: LikeShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as LikeShape);
+    return new this(normalizeObject(json));
   }
 }

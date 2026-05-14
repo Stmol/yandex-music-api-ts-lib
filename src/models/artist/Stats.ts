@@ -19,6 +19,6 @@ export class Stats {
     this: new (shape: StatsShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as StatsShape);
+    return new this(normalizeObject(json));
   }
 }

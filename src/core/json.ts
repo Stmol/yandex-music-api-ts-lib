@@ -6,13 +6,13 @@ export interface JsonObject {
   readonly [key: string]: JsonValue;
 }
 
-export interface JsonArray extends ReadonlyArray<JsonValue> {}
+export type JsonArray = readonly JsonValue[];
 
 export type DeepReadonly<T> = T extends JsonPrimitive
   ? T
   : T extends (...args: never[]) => unknown
     ? T
-    : T extends readonly [...infer _TValues]
+    : T extends readonly [unknown, ...unknown[]]
       ? { readonly [TKey in keyof T]: DeepReadonly<T[TKey]> }
       : T extends ReadonlyArray<infer TValue>
         ? ReadonlyArray<DeepReadonly<TValue>>

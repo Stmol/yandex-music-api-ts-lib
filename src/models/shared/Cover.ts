@@ -28,7 +28,7 @@ export class Cover {
     this: new (shape: CoverShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as CoverShape);
+    return new this(normalizeObject(json));
   }
 
   getUrl(size: CoverSize = "200x200"): string | null {

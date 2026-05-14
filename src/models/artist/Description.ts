@@ -19,6 +19,6 @@ export class Description {
     this: new (shape: DescriptionShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as DescriptionShape);
+    return new this(normalizeObject(json));
   }
 }

@@ -21,6 +21,6 @@ export class TrailerInfo {
     this: new (shape: TrailerInfoShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as TrailerInfoShape);
+    return new this(normalizeObject(json));
   }
 }

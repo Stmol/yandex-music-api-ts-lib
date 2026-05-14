@@ -72,7 +72,7 @@ export function expectJsonArray(
     throw schemaError(value, "array", path, context);
   }
 
-  return value;
+  return value as readonly JsonValue[];
 }
 
 export function parseJsonObjectArray<TItem>(

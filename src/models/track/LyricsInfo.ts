@@ -19,6 +19,6 @@ export class LyricsInfo {
     this: new (shape: LyricsInfoShape) => TModel,
     json: DeepReadonly<JsonObject>,
   ): TModel {
-    return new this(normalizeObject(json) as LyricsInfoShape);
+    return new this(normalizeObject(json));
   }
 }
