@@ -121,6 +121,7 @@ export * from "./playlist/PlaylistAbsence.ts";
 export * from "./playlist/PlaylistAvailability.ts";
 export * from "./playlist/PlaylistId.ts";
 export * from "./playlist/PlaylistRecommendation.ts";
+export * from "./playlist/PlaylistRecommendations.ts";
 export * from "./playlist/PlaylistSimilarEntities.ts";
 export * from "./playlist/PlaylistTrailer.ts";
 export * from "./playlist/PlaylistsList.ts";

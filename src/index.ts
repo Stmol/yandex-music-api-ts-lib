@@ -62,8 +62,13 @@ export type {
   LandingTagOptions,
 } from "./resources/landing.js";
 export type {
+  DislikedTracksOptions,
   LikeId,
   LikeIds,
+  LikedAlbumsOptions,
+  LikedArtistsOptions,
+  LikedClipsOptions,
+  LikedTracksOptions,
   LikesMutationOptions,
   PlaylistLikeId,
 } from "./resources/likes.js";
@@ -81,6 +86,8 @@ export type {
   PlaylistInsertDiffOperation,
   PlaylistInsertDiffTrack,
   PlaylistInsertTrackOptions,
+  PlaylistMoveTrackOptions,
+  PlaylistMoveTracksOptions,
   PlaylistVisibility,
 } from "./resources/playlists.js";
 export type {

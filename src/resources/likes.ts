@@ -1,9 +1,15 @@
 import type { ArtistId, TrackId, UserId } from "../core/identifiers.ts";
 import { encodePathSegment, joinIds } from "../core/identifiers.ts";
 import type { JsonObject } from "../core/json.ts";
+import { expectJsonObject } from "../core/parsing.ts";
 import type { HttpResponse, HttpTransport } from "../http/types.ts";
 import { parseYandexApiResponse } from "../http/response.ts";
+import { Artist } from "../models/artist/Artist.ts";
+import { ClipsWillLike } from "../models/clip/ClipsWillLike.ts";
+import { Like } from "../models/shared/Like.ts";
+import { TracksList } from "../models/shared/TracksList.ts";
 import type { AlbumId } from "./albums.ts";
+import { parseObjectArrayResult, parseObjectResult } from "./parsing.ts";
 
 export type LikeId = string | number;
 export type LikeIds<TId extends LikeId = LikeId> = TId | readonly TId[];
@@ -11,6 +17,27 @@ export type PlaylistLikeId = string | number;
 
 export interface LikesMutationOptions {
   readonly userId: UserId;
+}
+
+export interface LikedTracksOptions {
+  readonly ifModifiedSinceRevision?: number;
+}
+
+export interface LikedAlbumsOptions {
+  readonly rich?: boolean;
+}
+
+export interface LikedArtistsOptions {
+  readonly withTimestamps?: boolean;
+}
+
+export interface DislikedTracksOptions {
+  readonly ifModifiedSinceRevision?: number;
+}
+
+export interface LikedClipsOptions {
+  readonly page?: number;
+  readonly pageSize?: number;
 }
 
 function createFormBody(entries: Readonly<Record<string, string | number>>): URLSearchParams {
@@ -45,11 +72,124 @@ function parseMutationSuccess(response: HttpResponse, acceptsRevisionObject: boo
   return acceptsRevisionObject && isJsonObject(result) && "revision" in result;
 }
 
+function parseObjectMutationSuccess(response: HttpResponse): boolean {
+  const result = parseYandexApiResponse<unknown>(response);
+
+  return result === "ok" || isJsonObject(result);
+}
+
+function parseLibraryTracksList(response: HttpResponse): TracksList {
+  const result = expectJsonObject(parseYandexApiResponse<unknown>(response), "$.result", {
+    status: response.status,
+    url: response.url,
+  });
+  const library = expectJsonObject(result.library, "$.result.library", {
+    status: response.status,
+    url: response.url,
+  });
+
+  return TracksList.fromJSON(library);
+}
+
 export class LikesResource {
   private readonly transport: HttpTransport;
 
   constructor(transport: HttpTransport) {
     this.transport = transport;
+  }
+
+  async likedTracks(
+    userId: UserId,
+    options: LikedTracksOptions = {},
+  ): Promise<TracksList> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/likes/tracks`,
+      query: {
+        "if-modified-since-revision": options.ifModifiedSinceRevision,
+      },
+    });
+
+    return parseLibraryTracksList(response);
+  }
+
+  async likedAlbums(
+    userId: UserId,
+    options: LikedAlbumsOptions = {},
+  ): Promise<readonly Like[]> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/likes/albums`,
+      query: {
+        rich: options.rich ?? true,
+      },
+    });
+
+    return parseObjectArrayResult(response, (entry) => Like.fromJSON(entry, "album"));
+  }
+
+  async likedArtists(
+    userId: UserId,
+    options: LikedArtistsOptions = {},
+  ): Promise<readonly Like[]> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/likes/artists`,
+      query: {
+        "with-timestamps": options.withTimestamps ?? true,
+      },
+    });
+
+    return parseObjectArrayResult(response, (entry) => Like.fromJSON(entry, "artist"));
+  }
+
+  async likedPlaylists(userId: UserId): Promise<readonly Like[]> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/likes/playlists`,
+    });
+
+    return parseObjectArrayResult(response, (entry) => Like.fromJSON(entry, "playlist"));
+  }
+
+  async dislikedTracks(
+    userId: UserId,
+    options: DislikedTracksOptions = {},
+  ): Promise<TracksList> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/dislikes/tracks`,
+      query: {
+        if_modified_since_revision: options.ifModifiedSinceRevision,
+      },
+    });
+
+    return parseLibraryTracksList(response);
+  }
+
+  async dislikedArtists(userId: UserId): Promise<readonly Artist[]> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/dislikes/artists`,
+    });
+
+    return parseObjectArrayResult(response, (entry) => Artist.fromJSON(entry));
+  }
+
+  async likedClips(
+    userId: UserId,
+    options: LikedClipsOptions = {},
+  ): Promise<ClipsWillLike> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/likes/clips`,
+      query: {
+        page: options.page ?? 0,
+        pageSize: options.pageSize ?? 100,
+      },
+    });
+
+    return ClipsWillLike.fromJSON(parseObjectResult(response));
   }
 
   private async mutateLikes(
@@ -128,6 +268,27 @@ export class LikesResource {
     options: LikesMutationOptions,
   ): Promise<boolean> {
     return this.mutateLikes("playlist", playlistIds, true, options);
+  }
+
+  async addClip(clipId: LikeId, options: LikesMutationOptions): Promise<boolean> {
+    const response = await this.transport.request({
+      method: "POST",
+      path: `/users/${encodePathSegment(options.userId)}/likes/clips/add`,
+      query: {
+        "clip-id": clipId,
+      },
+    });
+
+    return parseObjectMutationSuccess(response);
+  }
+
+  async removeClip(clipId: LikeId, options: LikesMutationOptions): Promise<boolean> {
+    const response = await this.transport.request({
+      method: "POST",
+      path: `/users/${encodePathSegment(options.userId)}/likes/clips/${encodePathSegment(clipId)}/remove`,
+    });
+
+    return parseObjectMutationSuccess(response);
   }
 
   async addTrackDislikes(

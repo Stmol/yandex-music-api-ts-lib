@@ -1,12 +1,18 @@
 import {
   encodePathSegment,
+  joinIds,
   type PlaylistKind,
   type TrackId,
   type UserId,
 } from "../core/identifiers.ts";
 import type { SupportedLanguage, HttpTransport } from "../http/types.ts";
 import { parseYandexApiResponse } from "../http/response.ts";
+import { GeneratedPlaylist } from "../models/feed/GeneratedPlaylist.ts";
 import { Playlist } from "../models/playlist/Playlist.ts";
+import { PlaylistRecommendations } from "../models/playlist/PlaylistRecommendations.ts";
+import { PlaylistSimilarEntities } from "../models/playlist/PlaylistSimilarEntities.ts";
+import { PlaylistsList } from "../models/playlist/PlaylistsList.ts";
+import { PlaylistTrailer } from "../models/playlist/PlaylistTrailer.ts";
 import { parseObjectArrayResult, parseObjectResult } from "./parsing.ts";
 
 export type PlaylistVisibility = "private" | "public";
@@ -43,6 +49,23 @@ export interface PlaylistDeleteTracksOptions {
   readonly to: number;
 }
 
+export interface PlaylistMoveTrackOptions {
+  readonly albumId: string | number;
+  readonly at: number;
+  readonly from: number;
+  readonly revision: number;
+  readonly to?: number;
+  readonly trackId: TrackId;
+}
+
+export interface PlaylistMoveTracksOptions {
+  readonly at: number;
+  readonly from: number;
+  readonly revision: number;
+  readonly to: number;
+  readonly tracks: readonly PlaylistInsertDiffTrack[];
+}
+
 export interface PlaylistInsertDiffTrack {
   readonly albumId: string | number;
   readonly id: TrackId;
@@ -62,10 +85,20 @@ export interface PlaylistDeleteDiffOperation {
 
 export type PlaylistDiffOperation = PlaylistInsertDiffOperation | PlaylistDeleteDiffOperation;
 
-function createFormBody(entries: Readonly<Record<string, string | number | boolean>>): URLSearchParams {
+function createFormBody(
+  entries: Readonly<Record<string, string | number | boolean | readonly (string | number | boolean)[]>>,
+): URLSearchParams {
   const body = new URLSearchParams();
 
   for (const [key, value] of Object.entries(entries)) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        body.append(key, String(entry));
+      }
+
+      continue;
+    }
+
     body.set(key, String(value));
   }
 
@@ -185,6 +218,119 @@ export class PlaylistsResource {
     });
 
     return Playlist.fromJSON(parseObjectResult(response));
+  }
+
+  async byKinds(userId: UserId, kinds: readonly PlaylistKind[]): Promise<readonly Playlist[]> {
+    const response = await this.transport.request({
+      body: createFormBody({
+        kinds,
+      }),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      method: "POST",
+      path: `/users/${encodePathSegment(userId)}/playlists`,
+    });
+
+    return parseObjectArrayResult(response, (entry) => Playlist.fromJSON(entry));
+  }
+
+  async recommendations(
+    userId: UserId,
+    kind: PlaylistKind,
+  ): Promise<PlaylistRecommendations> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/recommendations`,
+    });
+
+    return PlaylistRecommendations.fromJSON(parseObjectResult(response));
+  }
+
+  async collectiveJoin(userId: UserId, token: string): Promise<boolean> {
+    const response = await this.transport.request({
+      method: "POST",
+      path: "/playlists/collective/join",
+      query: {
+        token,
+        uid: userId,
+      },
+    });
+    const result = parseYandexApiResponse<unknown>(response);
+
+    return result === "ok";
+  }
+
+  async byUuid(uuid: string): Promise<Playlist> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/playlist/${encodePathSegment(uuid)}`,
+    });
+
+    return Playlist.fromJSON(parseObjectResult(response));
+  }
+
+  async similarEntities(uuid: string): Promise<PlaylistSimilarEntities> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/playlist/${encodePathSegment(uuid)}/similar-entities`,
+    });
+
+    return PlaylistSimilarEntities.fromJSON(parseObjectResult(response));
+  }
+
+  async byIds(playlistIds: readonly (string | number)[]): Promise<PlaylistsList> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: "/playlists",
+      query: {
+        playlistIds: joinIds(playlistIds),
+      },
+    });
+
+    return PlaylistsList.fromJSON(parseObjectResult(response));
+  }
+
+  async listShort(playlistIds: readonly (string | number)[]): Promise<readonly Playlist[]> {
+    const response = await this.transport.request({
+      method: "POST",
+      path: "/playlists/list",
+      query: {
+        "playlist-ids": playlistIds,
+      },
+    });
+
+    return parseObjectArrayResult(response, (entry) => Playlist.fromJSON(entry));
+  }
+
+  async personal(playlistId: string | number): Promise<GeneratedPlaylist> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/playlists/personal/${encodePathSegment(playlistId)}`,
+    });
+
+    return GeneratedPlaylist.fromJSON(parseObjectResult(response));
+  }
+
+  async trailer(userId: UserId, kind: PlaylistKind): Promise<PlaylistTrailer> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/playlists/${encodePathSegment(kind)}/trailer`,
+    });
+
+    return PlaylistTrailer.fromJSON(parseObjectResult(response));
+  }
+
+  async kinds(userId: UserId): Promise<readonly number[]> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: `/users/${encodePathSegment(userId)}/playlists/list/kinds`,
+    });
+    const result = parseYandexApiResponse<unknown>(response);
+
+    if (!Array.isArray(result)) return [];
+
+    return result.filter((entry): entry is number => typeof entry === "number");
   }
 
   async create(userId: UserId, options: PlaylistCreateOptions): Promise<Playlist> {
@@ -313,6 +459,39 @@ export class PlaylistsResource {
   ): Promise<Playlist> {
     return this.change(userId, kind, {
       diff: [createPlaylistDeleteOperation(options.from, options.to)],
+      revision: options.revision,
+    });
+  }
+
+  async moveTrack(
+    userId: UserId,
+    kind: PlaylistKind,
+    options: PlaylistMoveTrackOptions,
+  ): Promise<Playlist> {
+    return this.moveTracks(userId, kind, {
+      at: options.at,
+      from: options.from,
+      revision: options.revision,
+      to: options.to ?? options.from,
+      tracks: [
+        {
+          albumId: options.albumId,
+          id: options.trackId,
+        },
+      ],
+    });
+  }
+
+  async moveTracks(
+    userId: UserId,
+    kind: PlaylistKind,
+    options: PlaylistMoveTracksOptions,
+  ): Promise<Playlist> {
+    return this.change(userId, kind, {
+      diff: [
+        createPlaylistDeleteOperation(options.from, options.to),
+        createPlaylistInsertOperation(options.at, options.tracks),
+      ],
       revision: options.revision,
     });
   }

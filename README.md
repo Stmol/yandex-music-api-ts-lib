@@ -18,16 +18,16 @@ Current scope:
 - zero-runtime-dependency package contract checks
 - Node test-build pipeline
 - runtime smoke tests for Node.js, Bun, and Deno
-- LLM-oriented project map for agent handoffs and code navigation
+- LLM-oriented usage map for agents integrating the package into applications
 - release validation workflow for typecheck, Node tests, Bun smoke tests, Deno smoke tests, and package dry-run on pushed release tags
 
 Beta scope:
 
 - curated handwritten models for account, artist, album, track, playlist, search, landing, feed, genre, queue, radio, history, and shared read-only shapes
 - expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
-- v0.4 read-only model parity wave covering clip, concert, label, metatag, shot, skeleton, wave, and expanded nested account/artist/album/landing/playlist/radio/history/track shapes
+- read-only model parity wave covering clip, concert, label, metatag, shot, skeleton, wave, and expanded nested account/artist/album/landing/playlist/radio/history/track shapes
 - read-only account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history resources
-- v0.5 write subset for playlist creation, playlist metadata mutations, playlist item insert/delete, and likes/dislikes mutations
+- write subset for playlist creation, playlist metadata mutations, playlist item insert/delete/move, expanded playlist helpers, likes/dislikes reads and mutations, and clip likes
 - `fetch`-based default transport with OAuth header support
 - custom transport injection for tests and advanced runtime integration
 - ESM package exports for the root client API and the models subpath
@@ -35,7 +35,7 @@ Beta scope:
 Known gaps:
 
 - not all Yandex Music API models and endpoints are covered yet
-- write-heavy flows beyond v0.5 playlists and likes/dislikes remain outside the current scope, including pins, queue updates, radio feedback, presaves, device auth, and Ynison clients
+- write-heavy flows beyond the current playlists and likes/dislikes support remain outside the current scope, including pins, queue updates, radio feedback, presaves, device auth, and Ynison clients
 - no live API integration tests are included, so the test suite does not require secrets or network access
 - no CommonJS build is published
 - no browser-specific support matrix is documented yet
@@ -49,13 +49,13 @@ The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `pac
 
 ## Project Boundaries
 
-This package is a read-mostly API client focused on typed response parsing, transport behavior, stable package exports, and an explicit v0.5 write subset for playlists and likes/dislikes.
+This package is a read-mostly API client focused on typed response parsing, transport behavior, stable package exports, and an explicit write subset for playlists and likes/dislikes.
 
-For the full agent-facing map of project scope and conventions, see [LLM Project Map](docs/LLM.md).
+For machine-readable integration guidance, see [LLM Usage Map](docs/LLM.md).
 
-## Roadmap
+## Checkpoints
 
-Current project state:
+Current checkpoints:
 
 - [x] ESM npm package metadata
 - [x] Strict TypeScript build
@@ -63,16 +63,17 @@ Current project state:
 - [x] `fetch` transport with OAuth support
 - [x] Read-only resources for account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history
 - [x] Read-only parity helpers for search suggestions, music history items, artist metadata, and feed wizard status
+- [x] Playlist mutation support and playlist item modifications
+- [x] Likes/dislikes reads and mutations, including clip likes
 - [x] Node.js, Bun, and Deno smoke tests
 - [x] Package contract tests
 
-Planned next milestones:
+Remaining checkpoints:
 
-- [x] Release v0.4 with expanded read-only model parity against MarshalX/yandex-music-api
-- [x] Release v0.5 with playlist mutation support, playlist item modifications, and the first wider set of API write methods
-- [ ] Continue remaining model parity alongside the new mutation surface
-- [ ] Add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
-- [ ] Expand write-heavy flows after playlist support with queue updates, radio feedback, pins, presaves, and adjacent mutation resources
+- [ ] Continue remaining model parity alongside the current mutation surface
+- [ ] Add opt-in live integration tests
+- [ ] Document browser/runtime support and stabilize error/transport docs
+- [ ] Expand write-heavy flows with queue updates, radio feedback, pins, presaves, and adjacent mutation resources
 - [ ] Freeze the stable public API, compatibility policy, changelog, and release process
 
 ## Installation
@@ -125,6 +126,9 @@ await client.playlists.insertTrack(501, playlist.kind ?? 100, {
 await client.likes.addTracks(["11:22"], {
   userId: 501,
 });
+
+const likedTracks = await client.likes.likedTracks(501);
+const recommendations = await client.playlists.recommendations(501, playlist.kind ?? 100);
 ```
 
 You can provide a custom transport implementation when you need to control authentication, retries, or the runtime fetch integration yourself.
@@ -164,19 +168,17 @@ See [Model Parity](docs/model-parity.md) for the current local coverage table an
 
 Model parity here means typed parsing of API response shapes and practical nested model coverage.
 
-## Agent Orientation
+## LLM Usage Map
 
-AI agents and automation should start with [LLM Project Map](docs/LLM.md).
+AI agents and automation that connect this library inside another application should start with [LLM Usage Map](docs/LLM.md).
 
 It documents:
 
-- project purpose and current scope boundaries
-- public package surface and runtime assumptions
-- source tree map for `client`, `http`, `resources`, `models`, and `core`
-- model/resource implementation patterns
-- export rules and known naming collisions such as `LandingTrackId`
-- test layout and validation commands
-- model parity workflow and v0.4 direction
+- package entrypoints and runtime assumptions
+- OAuth and client construction
+- resource methods and common usage examples
+- models, error handling, and custom transport injection
+- integration checklist for tests and automation
 
 This repository was made possible by the prior work in [MarshalX/yandex-music-api](https://github.com/MarshalX/yandex-music-api/tree/main/yandex_music), which served as the implementation reference for translating proven Yandex Music API behavior into TypeScript.
 Many thanks to MarshalX for that work.
@@ -188,7 +190,7 @@ It validates typecheck, Node tests, Bun smoke tests, Deno smoke tests, and `npm 
 
 ## Development
 
-Start with [LLM Project Map](docs/LLM.md) if you are an AI agent or if you need a fast architecture overview.
+Agents integrating this package should use [LLM Usage Map](docs/LLM.md). Contributors working on this repository can run the local validation commands below.
 
 ```fish
 npm run check:types
