@@ -22,8 +22,9 @@ Current scope:
 
 Beta scope:
 
-- curated handwritten models for the first account, artist, album, track, playlist, search, landing, queue, radio, and history shapes
-- read-only account, tracks, playlists, search, artists, and landing resources
+- curated handwritten models for account, artist, album, track, playlist, search, landing, feed, genre, queue, radio, history, and shared read-only shapes
+- expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
+- read-only account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history resources
 - `fetch`-based default transport with OAuth header support
 - custom transport injection for tests and advanced runtime integration
 - ESM package exports for the root client API and the models subpath
@@ -31,6 +32,7 @@ Beta scope:
 Known gaps:
 
 - not all Yandex Music API models and endpoints are covered yet
+- write/download-heavy flows, likes/pins, playlist mutations, and radio feedback are outside the current read-only scope
 - no live API integration tests are included, so the test suite does not require secrets or network access
 - no CommonJS build is published
 - no browser-specific support matrix is documented yet
