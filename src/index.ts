@@ -28,4 +28,44 @@ export type {
   HttpTransport,
   SupportedLanguage,
 } from "./http/types.js";
+export type {
+  AlbumId,
+  AlbumsByIdsOptions,
+  AlbumSimilarEntitiesOptions,
+  AlbumTrailerOptions,
+  AlbumWithTracksOptions,
+} from "./resources/albums.js";
+export type {
+  ArtistAlbumsOptions,
+  ArtistBriefInfoOptions,
+  ArtistSimilarOptions,
+  ArtistsByIdsOptions,
+  ArtistTracksOptions,
+} from "./resources/artists.js";
+export type { GenresListOptions } from "./resources/genres.js";
+export type { MusicHistoryOptions } from "./resources/history.js";
+export type {
+  FeedOptions,
+  LandingChartOptions,
+  LandingListOptions,
+  LandingOptions,
+  LandingTagOptions,
+} from "./resources/landing.js";
+export type {
+  RadioAccountStatusOptions,
+  RadioStationId,
+  RadioStationInfoOptions,
+  RadioStationTracksOptions,
+  RadioStationsDashboardOptions,
+  RadioStationsListOptions,
+} from "./resources/radio.js";
+export type {
+  TrackDownloadInfoOptions,
+  TrackFullInfoOptions,
+  TrackLyricsOptions,
+  TracksByIdsOptions,
+  TrackSimilarOptions,
+  TrackSupplementOptions,
+  TrackTrailerOptions,
+} from "./resources/tracks.js";
 export * from "./models/index.js";

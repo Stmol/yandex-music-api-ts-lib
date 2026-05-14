@@ -1,8 +1,11 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
 import { assignModelShape } from "../../core/model.ts";
-import { normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
+import { expectJsonObject, normalizeObject, parseOptionalJsonObject, parseOptionalJsonObjectArray } from "../../core/parsing.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Cover } from "../shared/Cover.ts";
+import { Track } from "../track/Track.ts";
+import { Deprecation } from "./Deprecation.ts";
+import { TrackPosition } from "./TrackPosition.ts";
 
 export interface AlbumShape extends Record<string, unknown> {
   id?: string | number;
@@ -16,6 +19,10 @@ export interface AlbumShape extends Record<string, unknown> {
   coverUri?: string | null;
   artists?: readonly Artist[];
   cover?: Cover | null;
+  trackPosition?: TrackPosition | null;
+  deprecation?: Deprecation | null;
+  volumes?: readonly (readonly Track[])[];
+  tracks?: readonly Track[];
 }
 
 export class Album {
@@ -30,6 +37,10 @@ export class Album {
   declare readonly coverUri?: string | null;
   declare readonly artists?: readonly Artist[];
   declare readonly cover?: Cover | null;
+  declare readonly trackPosition?: TrackPosition | null;
+  declare readonly deprecation?: Deprecation | null;
+  declare readonly volumes?: readonly (readonly Track[])[];
+  declare readonly tracks?: readonly Track[];
 
   constructor(shape: AlbumShape) {
     assignModelShape(this, shape);
@@ -45,11 +56,30 @@ export class Album {
       Artist.fromJSON(entry));
     const cover = parseOptionalJsonObject(normalized.cover, "$.cover", (entry) =>
       Cover.fromJSON(entry));
+    const trackPosition = parseOptionalJsonObject(normalized.trackPosition, "$.trackPosition", (entry) =>
+      TrackPosition.fromJSON(entry));
+    const deprecation = parseOptionalJsonObject(normalized.deprecation, "$.deprecation", (entry) =>
+      Deprecation.fromJSON(entry));
+    const tracks = parseOptionalJsonObjectArray(normalized.tracks, "$.tracks", (entry) =>
+      Track.fromJSON(entry));
 
     if (artists !== undefined) {
       shape.artists = artists;
     }
     if (cover !== undefined) shape.cover = cover;
+    if (trackPosition !== undefined) shape.trackPosition = trackPosition;
+    if (deprecation !== undefined) shape.deprecation = deprecation;
+    if (tracks !== undefined) shape.tracks = tracks;
+    if (Array.isArray(normalized.volumes)) {
+      shape.volumes = normalized.volumes.map((volume, volumeIndex) => {
+        if (!Array.isArray(volume)) {
+          return [];
+        }
+
+        return volume.map((entry, trackIndex) =>
+          Track.fromJSON(parseVolumeTrack(entry, `$.volumes[${volumeIndex}][${trackIndex}]`)));
+      });
+    }
 
     return new this(shape);
   }
@@ -71,4 +101,8 @@ export class Album {
 
     return new Cover({ uri: this.coverUri }).getUrl(size);
   }
+}
+
+function parseVolumeTrack(value: JsonValue, path: string): JsonObject {
+  return expectJsonObject(value, path);
 }
