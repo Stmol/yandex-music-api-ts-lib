@@ -5,23 +5,12 @@ import { Album } from "../album/Album.ts";
 import { Artist } from "../artist/Artist.ts";
 import { Playlist } from "../playlist/Playlist.ts";
 import { Track } from "../track/Track.ts";
+import { Block } from "./Block.ts";
 import { LandingList } from "./LandingList.ts";
 import { TagResult } from "./TagResult.ts";
 
-export interface LandingEntityShape {
-  type?: string;
-  data?: JsonValue;
-}
-
-export interface LandingBlockShape {
-  id?: string;
-  type?: string;
-  title?: string;
-  entities?: readonly LandingEntityShape[];
-}
-
 export interface LandingShape extends Record<string, unknown> {
-  blocks?: readonly LandingBlockShape[];
+  blocks?: readonly Block[];
   lists?: readonly LandingList[];
   tagResults?: readonly TagResult[];
   albums?: readonly Album[];
@@ -30,27 +19,8 @@ export interface LandingShape extends Record<string, unknown> {
   artists?: readonly Artist[];
 }
 
-function parseEntities(value: JsonValue | undefined): readonly LandingEntityShape[] | undefined {
-  return parseOptionalJsonObjectArray(value, "$.entities", (entry) =>
-    normalizeObject(entry) as LandingEntityShape);
-}
-
-function parseBlocks(value: JsonValue | undefined): readonly LandingBlockShape[] | undefined {
-  return parseOptionalJsonObjectArray(value, "$.blocks", (entry) => {
-      const normalized = normalizeObject(entry) as Record<string, JsonValue>;
-      const block: LandingBlockShape = { ...normalized };
-      const entities = parseEntities(normalized.entities);
-
-      if (entities !== undefined) {
-        block.entities = entities;
-      }
-
-      return block;
-    });
-}
-
 export class Landing {
-  declare readonly blocks?: readonly LandingBlockShape[];
+  declare readonly blocks?: readonly Block[];
   declare readonly lists?: readonly LandingList[];
   declare readonly tagResults?: readonly TagResult[];
   declare readonly albums?: readonly Album[];
@@ -68,7 +38,8 @@ export class Landing {
   ): TModel {
     const normalized = normalizeObject(json) as Record<string, JsonValue>;
     const shape: LandingShape = { ...normalized };
-    const blocks = parseBlocks(normalized.blocks);
+    const blocks = parseOptionalJsonObjectArray(normalized.blocks, "$.blocks", (entry) =>
+      Block.fromJSON(entry));
     const lists = parseOptionalJsonObjectArray(normalized.lists, "$.lists", (entry) =>
       LandingList.fromJSON(entry));
     const tagResults = parseOptionalJsonObjectArray(normalized.tagResults, "$.tagResults", (entry) =>
@@ -99,7 +70,7 @@ export class Landing {
     return this.blocks?.length ?? 0;
   }
 
-  findBlock(type: string): LandingBlockShape | undefined {
+  findBlock(type: string): Block | undefined {
     return this.blocks?.find((block) => block.type === type);
   }
 }

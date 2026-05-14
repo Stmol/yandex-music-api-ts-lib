@@ -1,6 +1,8 @@
 import type { DeepReadonly, JsonObject, JsonValue } from "../../core/json.ts";
 import { assignModelShape } from "../../core/model.ts";
 import { normalizeObject, parseOptionalJsonObject } from "../../core/parsing.ts";
+import { Permissions } from "./Permissions.ts";
+import { Plus } from "./Plus.ts";
 
 export interface StatusAccount {
   uid?: number | string;
@@ -9,26 +11,17 @@ export interface StatusAccount {
   fullName?: string;
 }
 
-export interface StatusPermissions {
-  until?: string | null;
-}
-
-export interface StatusPlus {
-  hasPlus?: boolean;
-  isTutorialCompleted?: boolean;
-}
-
 export interface StatusShape extends Record<string, unknown> {
   account?: StatusAccount | null;
-  permissions?: StatusPermissions | null;
-  plus?: StatusPlus | null;
+  permissions?: Permissions | null;
+  plus?: Plus | null;
   defaultEmail?: string | null;
 }
 
 export class Status {
   declare readonly account?: StatusAccount | null;
-  declare readonly permissions?: StatusPermissions | null;
-  declare readonly plus?: StatusPlus | null;
+  declare readonly permissions?: Permissions | null;
+  declare readonly plus?: Plus | null;
   declare readonly defaultEmail?: string | null;
 
   constructor(shape: StatusShape) {
@@ -44,9 +37,9 @@ export class Status {
     const account = parseOptionalJsonObject(normalized.account, "$.account", (entry) =>
       normalizeObject(entry) as StatusAccount);
     const permissions = parseOptionalJsonObject(normalized.permissions, "$.permissions", (entry) =>
-      normalizeObject(entry) as StatusPermissions);
+      Permissions.fromJSON(entry));
     const plus = parseOptionalJsonObject(normalized.plus, "$.plus", (entry) =>
-      normalizeObject(entry) as StatusPlus);
+      Plus.fromJSON(entry));
 
     if (account !== undefined) shape.account = account;
     if (permissions !== undefined) shape.permissions = permissions;

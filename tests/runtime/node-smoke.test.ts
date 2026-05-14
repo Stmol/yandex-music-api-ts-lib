@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { Status, YandexMusicClient, type HttpRequest, type HttpResponse, type HttpTransport } from "../../src/index.ts";
-import { TrackShort } from "../../src/models/index.ts";
+import { Clip, Concert, Label, Metatag, TrackShort, Wave } from "../../src/models/index.ts";
 
 class SmokeTransport implements HttpTransport {
   readonly requests: HttpRequest[] = [];
@@ -40,6 +40,11 @@ test("Node.js can import the package entrypoints and use a custom transport", as
     title: "Runtime Smoke",
   });
 
+  assert.ok(Clip.fromJSON({ id: "clip-1" }) instanceof Clip);
+  assert.ok(Concert.fromJSON({ id: "concert-1" }) instanceof Concert);
+  assert.ok(Label.fromJSON({ id: "label-1" }) instanceof Label);
+  assert.ok(Metatag.fromJSON({ id: "tag-1" }) instanceof Metatag);
+  assert.ok(Wave.fromJSON({ id: "wave-1" }) instanceof Wave);
   assert.equal(status instanceof Status, true);
   assert.equal(status.account?.displayName, "Node Listener");
   assert.equal(status.hasActiveSubscription, true);

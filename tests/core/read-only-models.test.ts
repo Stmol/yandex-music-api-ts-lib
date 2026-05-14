@@ -18,6 +18,7 @@ import {
   LyricsInfo,
   Major,
   MusicHistoryItems,
+  Playlist,
   R128,
   SimilarTracks,
   Station,
@@ -32,6 +33,46 @@ import {
   TrailerInfo,
   Video,
 } from "../../src/models/index.ts";
+import { Product } from "../../src/models/account/Product.ts";
+import { ArtistClipItem } from "../../src/models/artist/ArtistClipItem.ts";
+import { ArtistClips } from "../../src/models/artist/ArtistClips.ts";
+import { ArtistDonationItem } from "../../src/models/artist/ArtistDonationItem.ts";
+import { ArtistDonations } from "../../src/models/artist/ArtistDonations.ts";
+import { Clip } from "../../src/models/clip/Clip.ts";
+import { ClipsWillLike } from "../../src/models/clip/ClipsWillLike.ts";
+import { ArtistConcerts } from "../../src/models/concert/ArtistConcerts.ts";
+import { Concert } from "../../src/models/concert/Concert.ts";
+import { ConcertFeed } from "../../src/models/concert/ConcertFeed.ts";
+import { ConcertFeedItem } from "../../src/models/concert/ConcertFeedItem.ts";
+import { ConcertLocation } from "../../src/models/concert/ConcertLocation.ts";
+import { ConcertLocations } from "../../src/models/concert/ConcertLocations.ts";
+import { Day } from "../../src/models/feed/Day.ts";
+import { Event } from "../../src/models/feed/Event.ts";
+import { GeneratedPlaylist } from "../../src/models/feed/GeneratedPlaylist.ts";
+import { TrackWithAds } from "../../src/models/feed/TrackWithAds.ts";
+import { MusicHistoryItem } from "../../src/models/history/MusicHistoryItem.ts";
+import { LabelAlbums } from "../../src/models/label/LabelAlbums.ts";
+import { LabelArtists } from "../../src/models/label/LabelArtists.ts";
+import { Block } from "../../src/models/landing/Block.ts";
+import { BlockEntity } from "../../src/models/landing/BlockEntity.ts";
+import { Chart } from "../../src/models/landing/Chart.ts";
+import { ChartItem } from "../../src/models/landing/ChartItem.ts";
+import { MetatagAlbums } from "../../src/models/metatag/MetatagAlbums.ts";
+import { MetatagArtistEntry } from "../../src/models/metatag/MetatagArtistEntry.ts";
+import { MetatagArtists } from "../../src/models/metatag/MetatagArtists.ts";
+import { MetatagPlaylists } from "../../src/models/metatag/MetatagPlaylists.ts";
+import { MetatagTitle } from "../../src/models/metatag/MetatagTitle.ts";
+import { MetatagTree } from "../../src/models/metatag/MetatagTree.ts";
+import { PlaylistId } from "../../src/models/playlist/PlaylistId.ts";
+import { PlaylistSimilarEntities } from "../../src/models/playlist/PlaylistSimilarEntities.ts";
+import { PlaylistTrailer } from "../../src/models/playlist/PlaylistTrailer.ts";
+import { Sequence } from "../../src/models/radio/Sequence.ts";
+import { Shot } from "../../src/models/shot/Shot.ts";
+import { ShotEvent } from "../../src/models/shot/ShotEvent.ts";
+import { SkeletonBlock } from "../../src/models/skeleton/SkeletonBlock.ts";
+import { SkeletonTab } from "../../src/models/skeleton/SkeletonTab.ts";
+import { SimilarEntityItem } from "../../src/models/wave/SimilarEntityItem.ts";
+import { Wave } from "../../src/models/wave/Wave.ts";
 
 test("DownloadInfo matches by codec and bitrate after camelCase normalization", () => {
   const info = DownloadInfo.fromJSON({
@@ -186,6 +227,36 @@ test("Artist brief, tracks, albums, and similar parse nested models", () => {
   assert.ok(similar.artists?.[0] instanceof Artist);
 });
 
+test("Account and playlist metadata models normalize nested payloads", () => {
+  const product = Product.fromJSON({
+    product_id: "plus",
+    trial_duration: 30,
+    price: { amount: 199, currency: "RUB" },
+  });
+  const playlistId = PlaylistId.fromJSON({ uid: 100, kind: 1 });
+  const trailer = PlaylistTrailer.fromJSON({
+    trailer_info: {
+      available: true,
+    },
+  });
+  const similar = PlaylistSimilarEntities.fromJSON({
+    playlists: [{ kind: 1, title: "Playlist" }],
+    albums: [{ id: 31, title: "Album" }],
+    artists: [{ id: 41, name: "Artist" }],
+    tracks: [{ id: 51, title: "Track" }],
+  });
+
+  assert.equal(product.productId, "plus");
+  assert.equal(product.trialDuration, 30);
+  assert.equal(playlistId.uid, 100);
+  assert.ok(trailer.trailerInfo instanceof TrailerInfo);
+  assert.equal(trailer.trailerInfo?.available, true);
+  assert.ok(similar.playlists?.[0] instanceof Playlist);
+  assert.ok(similar.albums?.[0] instanceof Album);
+  assert.ok(similar.artists?.[0] instanceof Artist);
+  assert.ok(similar.tracks?.[0] instanceof Track);
+});
+
 test("Search suggestions parse best result and string suggestions", () => {
   const suggestions = Suggestions.fromJSON({
     best: {
@@ -285,4 +356,115 @@ test("Landing, genre, feed, and radio read-only models normalize nested payloads
   assert.ok(stationResult.station instanceof Station);
   assert.equal(stationResult.station?.stationId, "genre:rock");
   assert.ok(tracksResult.tracks?.[0] instanceof Track);
+});
+
+test("New read-only model families parse nested arrays", () => {
+  const clipsWillLike = ClipsWillLike.fromJSON({
+    clips: [{ id: "clip-1", title: "Clip" }],
+  });
+  const artistConcerts = ArtistConcerts.fromJSON({
+    concerts: [{ id: "c1", title: "Live" }],
+  });
+  const concertFeed = ConcertFeed.fromJSON({
+    items: [{ data: { concert: { id: "c1", title: "Live" } } }],
+  });
+  const concertLocations = ConcertLocations.fromJSON({
+    locations: [{ id: "loc1", title: "Venue" }],
+  });
+  const labelAlbums = LabelAlbums.fromJSON({
+    albums: [{ id: 1, title: "Album" }],
+  });
+  const labelArtists = LabelArtists.fromJSON({
+    artists: [{ id: 41, name: "Artist" }],
+  });
+  const metatagAlbums = MetatagAlbums.fromJSON({
+    albums: [{ id: 2, title: "Tagged Album" }],
+  });
+  const metatagArtists = MetatagArtists.fromJSON({
+    artists: [{ artist: { id: 42, name: "Tagged Artist" } }],
+  });
+  const metatagPlaylists = MetatagPlaylists.fromJSON({
+    playlists: [{ kind: 1, title: "Tagged Playlist" }],
+  });
+  const metatagTree = MetatagTree.fromJSON({
+    title: { title: "Mood" },
+    children: [{ id: "rock", title: { title: "Rock" } }],
+  });
+  const shot = Shot.fromJSON({
+    events: [{ type: "open", data: { id: "shot-data" } }],
+  });
+  const skeletonTab = SkeletonTab.fromJSON({
+    blocks: [{ type: "album", data: { title: "Block" } }],
+  });
+  const wave = Wave.fromJSON({
+    items: [{ type: "track", data: { track: { id: 51, title: "Track" } } }],
+  });
+
+  assert.ok(clipsWillLike.clips?.[0] instanceof Clip);
+  assert.ok(artistConcerts.concerts?.[0] instanceof Concert);
+  assert.ok(concertFeed.items?.[0] instanceof ConcertFeedItem);
+  assert.ok(concertFeed.items?.[0]?.data?.concert instanceof Concert);
+  assert.ok(concertLocations.locations?.[0] instanceof ConcertLocation);
+  assert.ok(labelAlbums.albums?.[0] instanceof Album);
+  assert.ok(labelArtists.artists?.[0] instanceof Artist);
+  assert.ok(metatagAlbums.albums?.[0] instanceof Album);
+  assert.ok(metatagArtists.artists?.[0] instanceof MetatagArtistEntry);
+  assert.ok((metatagArtists.artists?.[0] as MetatagArtistEntry | undefined)?.artist instanceof Artist);
+  assert.ok(metatagPlaylists.playlists?.[0] instanceof Playlist);
+  assert.ok(metatagTree.title instanceof MetatagTitle);
+  assert.ok(metatagTree.children?.[0] instanceof MetatagTree);
+  assert.ok(shot.events?.[0] instanceof ShotEvent);
+  assert.ok(skeletonTab.blocks?.[0] instanceof SkeletonBlock);
+  assert.ok(wave.items?.[0] instanceof SimilarEntityItem);
+  assert.ok(wave.items?.[0]?.data?.track instanceof Track);
+});
+
+test("Expanded existing nested families parse nested models", () => {
+  const artistClips = ArtistClips.fromJSON({
+    items: [{ data: { clip: { id: "clip-1" } } }],
+  });
+  const artistDonations = ArtistDonations.fromJSON({
+    items: [{ data: { goal: { amount: 1000, currency: "RUB" } } }],
+  });
+  const block = Block.fromJSON({
+    type: "new-releases",
+    entities: [{ type: "album", data: { id: 1, title: "Album" } }],
+  });
+  const chart = Chart.fromJSON({
+    items: [{ track: { id: 1, title: "Track" }, chart: { position: 1 } }],
+  });
+  const generatedPlaylist = GeneratedPlaylist.fromJSON({
+    playlist: { kind: 1, title: "Daily" },
+  });
+  const day = Day.fromJSON({
+    day: "2026-05-14",
+    events: [{ type: "track", data: { track: { id: 1, title: "Track" } } }],
+  });
+  const trackWithAds = TrackWithAds.fromJSON({
+    track: { id: 1, title: "Track" },
+  });
+  const musicHistoryItem = MusicHistoryItem.fromJSON({
+    type: "track",
+    data: {
+      item_id: { track_id: "1" },
+      full_model: { track: { id: 1, title: "Track" } },
+    },
+  });
+  const sequence = Sequence.fromJSON({ type: "track", track: { id: 1, title: "Track" } });
+
+  assert.ok(artistClips.items?.[0] instanceof ArtistClipItem);
+  assert.ok(artistClips.items?.[0]?.data?.clip instanceof Clip);
+  assert.ok(artistDonations.items?.[0] instanceof ArtistDonationItem);
+  assert.equal(artistDonations.items?.[0]?.data?.goal?.amount, 1000);
+  assert.ok(block.entities?.[0] instanceof BlockEntity);
+  assert.ok(block.entities?.[0]?.data instanceof Album);
+  assert.ok(chart.items?.[0] instanceof ChartItem);
+  assert.ok(chart.items?.[0]?.track instanceof Track);
+  assert.ok(generatedPlaylist.playlist instanceof Playlist);
+  assert.ok(day.events?.[0] instanceof Event);
+  assert.ok(day.events?.[0]?.data instanceof TrackWithAds);
+  assert.ok(trackWithAds.track instanceof Track);
+  assert.equal(musicHistoryItem.data?.itemId?.trackId, "1");
+  assert.ok(musicHistoryItem.data?.fullModel?.track instanceof Track);
+  assert.ok(sequence.track instanceof Track);
 });
