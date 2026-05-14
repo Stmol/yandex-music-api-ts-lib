@@ -1,6 +1,6 @@
 # Runtime Compatibility
 
-This document defines the supported runtime contract for `ya-music-api-ts-lib` as the package moves toward `v1.0.0`.
+This document defines the supported runtime contract for `ya-music-api-ts-lib` starting with `v1.0.0`.
 
 ## Stable Support
 

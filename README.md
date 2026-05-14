@@ -1,12 +1,16 @@
 # ya-music-api-ts-lib
 
 [![CI](https://github.com/Stmol/yandex-music-api-ts-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/Stmol/yandex-music-api-ts-lib/actions/workflows/ci.yml)
+[![Zero runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-2ea44f)](#runtime-compatibility)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](#license)
+[![Bun](https://img.shields.io/badge/Bun-1.1%2B-f9f1e1?logo=bun&logoColor=000000)](#runtime-compatibility)
+[![Deno](https://img.shields.io/badge/Deno-2.x-000000?logo=deno&logoColor=white)](#runtime-compatibility)
 
 Zero-dependency TypeScript package for the Yandex Music API.
 
 ## Status
 
-This repository is in `v1.0.0` stabilization mode.
+This repository is released as `v1.1.0`.
 
 Current scope:
 
@@ -22,7 +26,7 @@ Current scope:
 - release validation workflow for lint, typecheck, dead-code checks, runtime smoke tests, and package dry-run
 - documented runtime compatibility, error/transport contract, compatibility policy, and release process for the stable line
 
-Stable `v1.0.0` target scope:
+Stable `v1.0.0` scope:
 
 - curated handwritten models for account, artist, album, track, playlist, search, landing, feed, genre, queue, radio, history, and shared read-only shapes
 - expanded read-only models for nested track metadata, album volumes/trailers/similar entities, artist brief/tracks/albums/similar results, landing lists/chart/tag results, genres, radio station results, and music history
@@ -129,7 +133,7 @@ Current checkpoints:
 - [x] Error/transport contract documentation
 - [x] Compatibility policy
 - [x] Release process documentation
-- [x] Changelog draft for `v1.0.0`
+- [x] Changelog entry for `v1.0.0`
 - [x] Opt-in live integration tests
 
 Remaining checkpoints:
@@ -140,8 +144,28 @@ Remaining checkpoints:
 
 ## Installation
 
+### Node.js
+
 ```fish
 npm install ya-music-api-ts-lib
+```
+
+### Bun
+
+```fish
+bun add ya-music-api-ts-lib
+```
+
+### Deno
+
+```fish
+deno add npm:ya-music-api-ts-lib
+```
+
+Import it in Deno through the npm specifier:
+
+```ts
+import { YandexMusicClient } from "npm:ya-music-api-ts-lib";
 ```
 
 To access the Yandex Music API you need an OAuth token.
@@ -309,3 +333,7 @@ Regenerate the model parity report after adding or removing model files:
 ```fish
 node scripts/model-parity.mjs
 ```
+
+## License
+
+MIT

@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes the release path for the stable `v1.0.0` line and later maintenance releases.
+This document describes the release path used for `v1.0.0` and later maintenance releases.
 
 ## Scope
 
@@ -81,9 +81,9 @@ The intended release flow is:
 7. verify the tag-triggered CI run is green
 8. publish to npm only after the tag build is confirmed
 
-## v1.0.0 Stabilization Notes
+## v1.0.0 Release Notes
 
-`v1.0.0` should not be cut until all of the following are true:
+`v1.0.0` release readiness required the following:
 
 - runtime and browser support docs are explicit
 - error and transport contract docs match the implementation
@@ -91,4 +91,4 @@ The intended release flow is:
 - release process is written down
 - changelog entry for `v1.0.0` is prepared
 
-At the moment, the repository is versioned for `1.0.0` on this stabilization branch, but publication still requires an intentional release commit and tag push.
+The repository is versioned for `1.0.0`. If the worktree is clean and the validation gate is green, it is ready for the release tag and push flow above.

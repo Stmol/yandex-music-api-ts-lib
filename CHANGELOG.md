@@ -2,11 +2,16 @@
 
 All notable changes to this project should be documented in this file.
 
-The format is based on Keep a Changelog principles, with unreleased release notes prepared ahead of the actual tag.
+The format is based on Keep a Changelog principles.
 
-## [1.0.0] - Unreleased
+## [1.1.0] - 2026-05-14
 
-This entry documents the intended stable-release baseline. It does not mean the package has already been published as `1.0.0`.
+### Changed
+
+- clarified installation instructions in `README.md` for all supported runtimes: Node.js, Bun, and Deno
+- documented the Deno `npm:` import path alongside the install command to match actual consumer usage
+
+## [1.0.0] - 2026-05-14
 
 ### Added
 
