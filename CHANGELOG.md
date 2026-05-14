@@ -4,6 +4,17 @@ All notable changes to this project should be documented in this file.
 
 The format is based on Keep a Changelog principles.
 
+## [1.2.0] - 2026-05-14
+
+### Added
+
+- opt-in HTTP logging for the built-in `FetchTransport` through `enableHttpLogging`
+- public `HttpLogger` facade and `createConsoleHttpLogger()` factory for custom client-side logging integrations
+
+### Changed
+
+- documented attempt-level request/response/error logging behavior for the built-in transport
+- redacted sensitive HTTP headers before passing them to loggers
 ## [1.1.0] - 2026-05-14
 
 ### Changed
