@@ -1,4 +1,5 @@
 import { encodePathSegment } from "../core/identifiers.ts";
+import { normalizeObject } from "../core/parsing.ts";
 import type { SupportedLanguage, HttpTransport } from "../http/types.ts";
 import { Feed } from "../models/feed/Feed.ts";
 import { ChartInfo } from "../models/landing/ChartInfo.ts";
@@ -24,6 +25,10 @@ export interface LandingTagOptions {
 }
 
 export interface FeedOptions {
+  readonly language?: SupportedLanguage;
+}
+
+export interface FeedWizardIsPassedOptions {
   readonly language?: SupportedLanguage;
 }
 
@@ -100,6 +105,19 @@ export class LandingResource {
     });
 
     return Feed.fromJSON(parseObjectResult(response));
+  }
+
+  async feedWizardIsPassed(options: FeedWizardIsPassedOptions = {}): Promise<boolean> {
+    const response = await this.transport.request({
+      method: "GET",
+      path: "/feed/wizard/is-passed",
+      query: {
+        lang: options.language,
+      },
+    });
+    const result = normalizeObject(parseObjectResult(response)) as Record<string, unknown>;
+
+    return result.isWizardPassed === true;
   }
 
   private async getLandingList(

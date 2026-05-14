@@ -44,6 +44,25 @@ Published package surface:
 
 The npm package currently includes only `dist`, `README.md`, `LICENSE`, and `package.json`.
 
+## Roadmap
+
+Current project state:
+
+- [x] ESM npm package metadata
+- [x] Strict TypeScript build
+- [x] Zero runtime dependencies
+- [x] `fetch` transport with OAuth support
+- [x] Read-only resources for account, tracks, albums, playlists, search, artists, landing/feed, genres, radio, and history
+- [x] `v0.3 beta` read-only parity helpers for search suggestions, music history items, artist metadata, and feed wizard status
+- [x] Node.js, Bun, and Deno smoke tests
+- [x] Package contract tests
+
+Planned next releases:
+
+- [ ] `v0.4 beta`: add opt-in live integration tests, document browser/runtime support, and stabilize error/transport docs
+- [ ] `v0.5 beta`: start write-heavy flows as separate resources for likes/dislikes, playlist mutations, queue updates, and radio feedback
+- [ ] `v1.0`: freeze the stable public API, compatibility policy, changelog, and release process
+
 ## Installation
 
 ```fish
@@ -69,6 +88,15 @@ const tracks = await client.tracks.byIds(["11:22", "33:44"], {
 const search = await client.search.search("Muse", {
   language: "en",
   type: "track",
+});
+const suggestions = await client.search.searchSuggest("mus", {
+  language: "en",
+});
+const artistLinks = await client.artists.links(7015718, {
+  language: "en",
+});
+const historyItems = await client.history.musicHistoryItems({
+  trackIds: [{ trackId: 11, albumId: 22 }],
 });
 ```
 

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/http/types.ts";
 import { Search } from "../../src/models/search/Search.ts";
+import { Suggestions } from "../../src/models/search/Suggestions.ts";
 import { Track } from "../../src/models/track/Track.ts";
 import { SearchResource } from "../../src/resources/search.ts";
 
@@ -73,4 +74,37 @@ test("search.search serializes query parameters and parses the Search model", as
   assert.ok(result instanceof Search);
   assert.ok(result.best?.result instanceof Track);
   assert.equal(result.hasResults, true);
+});
+
+test("search.searchSuggest serializes the part parameter and parses suggestions", async () => {
+  const transport = new MockTransport({
+    body: {
+      result: {
+        best: {
+          type: "track",
+          result: {
+            id: 42,
+            title: "Muscle Museum",
+          },
+        },
+        suggestions: ["muse", "muse uprising"],
+      },
+    },
+    headers: {},
+    status: 200,
+    statusText: "OK",
+    url: "https://api.music.yandex.net/search/suggest",
+  });
+
+  const resource = new SearchResource(transport);
+  const result = await resource.searchSuggest("mus", { language: "en" });
+
+  assert.equal(transport.capturedRequest?.path, "/search/suggest");
+  assert.deepEqual(transport.capturedRequest?.query, {
+    lang: "en",
+    part: "mus",
+  });
+  assert.ok(result instanceof Suggestions);
+  assert.ok(result.best?.result instanceof Track);
+  assert.deepEqual(result.suggestions, ["muse", "muse uprising"]);
 });

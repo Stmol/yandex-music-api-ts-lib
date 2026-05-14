@@ -133,6 +133,17 @@ test("landing expanded read-only endpoints build paths and parse model results",
       statusText: "OK",
       url: "https://api.music.yandex.net/feed",
     },
+    {
+      body: {
+        result: {
+          is_wizard_passed: true,
+        },
+      },
+      headers: {},
+      status: 200,
+      statusText: "OK",
+      url: "https://api.music.yandex.net/feed/wizard/is-passed",
+    },
   ]);
   const resource = new LandingResource(transport);
 
@@ -142,6 +153,7 @@ test("landing expanded read-only endpoints build paths and parse model results",
   const podcasts = await resource.podcasts({ language: "en" });
   const tags = await resource.tags("summer", { language: "en" });
   const feed = await resource.feed({ language: "en" });
+  const isWizardPassed = await resource.feedWizardIsPassed({ language: "en" });
 
   assert.deepEqual(transport.capturedRequests.map((request) => request.path), [
     "/landing3/chart/world",
@@ -150,6 +162,7 @@ test("landing expanded read-only endpoints build paths and parse model results",
     "/landing3/podcasts",
     "/tags/summer/playlist-ids",
     "/feed",
+    "/feed/wizard/is-passed",
   ]);
   assert.deepEqual(transport.capturedRequests[0]?.query, {
     lang: "en",
@@ -161,6 +174,7 @@ test("landing expanded read-only endpoints build paths and parse model results",
   assert.ok(podcasts.tracks?.[0] instanceof Track);
   assert.ok(tags instanceof TagResult);
   assert.ok(feed instanceof Feed);
+  assert.equal(isWizardPassed, true);
 });
 
 class QueueTransport implements HttpTransport {
