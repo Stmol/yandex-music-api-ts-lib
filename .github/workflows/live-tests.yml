@@ -1,0 +1,37 @@
+name: Live Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_mutation_smoke:
+        description: "Run playlist create/delete mutation smoke test"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  live:
+    name: Live integration tests
+    runs-on: ubuntu-latest
+
+    env:
+      YANDEX_MUSIC_LIVE: "1"
+      YANDEX_MUSIC_OAUTH_TOKEN: ${{ secrets.YANDEX_MUSIC_OAUTH_TOKEN }}
+      YANDEX_MUSIC_LIVE_MUTATION: ${{ inputs.run_mutation_smoke && '1' || '0' }}
+      YANDEX_MUSIC_TEST_USER_ID: ${{ secrets.YANDEX_MUSIC_TEST_USER_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run live tests
+        run: npm run test:live
